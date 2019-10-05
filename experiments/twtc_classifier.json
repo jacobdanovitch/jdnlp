@@ -1,0 +1,63 @@
+{
+    "dataset_reader": {
+        "type": "twtc_reader"
+    },
+    "train_data_path": "/home/jacobgdt/dev/research/Trouble-With-The-Curve/webapp/source/train.csv",
+    "validation_data_path": "/home/jacobgdt/dev/research/Trouble-With-The-Curve/webapp/source/test.csv",
+    "model": {
+        "type": "HAN",
+        "text_field_embedder": {
+            "token_embedders": {
+                "tokens": {
+                    "type": "embedding",
+                    "embedding_dim": 100,
+                    "trainable": true
+                }
+            }
+        },
+        "encoder": {
+            "type": "HierarchicalAttention",
+            "input_size": 100,
+            "hidden_size": 100,
+            "attention_size": 100
+            
+        },
+        "classifier_feedforward": {
+            "input_dim": 100,
+            "num_layers": 3,
+            "hidden_dims": [
+                100,
+                100,
+                100
+            ],
+            "activations": [
+                "relu",
+                "linear"
+            ],
+            "dropout": [
+                0.2,
+                0
+            ]
+        }
+    },
+    "iterator": {
+        "type": "bucket",
+        "sorting_keys": [
+            [
+                "tokens",
+                "num_tokens"
+            ]
+        ],
+        "padding_noise": 0,
+        "batch_size": 8
+    },
+    "trainer": {
+        "num_epochs": 5,
+        "cuda_device": 0,
+        "grad_clipping": 5,
+        "validation_metric": "+accuracy",
+        "optimizer": {
+            "type": "adam"
+        }
+    }
+}

@@ -1,0 +1,8 @@
+*.pyc
+.mypy_cache/
+.pytest_cache/
+.vscode/
+
+**/*/__pycache__/
+.ipynb_checkpoints/
+saved/
