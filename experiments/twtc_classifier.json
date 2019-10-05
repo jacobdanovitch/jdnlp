@@ -32,9 +32,11 @@
             ],
             "activations": [
                 "relu",
+                "relu",
                 "linear"
             ],
             "dropout": [
+                0.2,
                 0.2,
                 0
             ]
