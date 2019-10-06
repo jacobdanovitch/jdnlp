@@ -51,7 +51,7 @@ class TWTCDatasetReader(DatasetReader):
 
     @overrides
     def _read(self, file_path):
-        data = pd.read_csv(cached_path(file_path), names=None).values
+        data = pd.read_csv(cached_path(file_path), header=None).values
         for text, label in data:
             inst = self.text_to_instance(text, str(label))
             if len(vars(inst.fields["tokens"])['tokens']) > 1:

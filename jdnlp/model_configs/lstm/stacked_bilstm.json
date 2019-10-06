@@ -5,20 +5,29 @@
     "train_data_path": null,
     "validation_data_path": null,
     "model": {
-        "type": "basic_classifier",
+        "type": "classifier_with_metrics",
+        "metrics": {
+            "categorical_accuracy": {},
+            
+            "f1": {
+                "positive_label": 1
+            }
+        },
         "text_field_embedder": {
             "token_embedders": {
                 "tokens": {
                     "type": "embedding",
-                    "embedding_dim": 100,
+                    "embedding_dim": 300,          
+                    "pretrained_file": "https://allennlp.s3.amazonaws.com/datasets/glove/glove.840B.300d.txt.gz",
                     "trainable": true
+                    
                 }
             }
         },
         "seq2vec_encoder": {
             "type": "stacked_bidirectional_lstm",
-            "input_size": 100,
-            "hidden_size": 100,
+            "input_size": 300,
+            "hidden_size": 300,
             "num_layers": 1
         }
     },
