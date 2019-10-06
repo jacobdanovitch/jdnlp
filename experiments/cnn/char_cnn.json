@@ -1,0 +1,62 @@
+{
+    "dataset_reader": {
+        "type": "twtc_reader"
+    },
+    "train_data_path": "datasets/twtc/train.csv",
+    "validation_data_path": "datasets/twtc/test.csv",
+    "model": {
+        "type": "basic_classifier",
+        "text_field_embedder": {
+            "tokens": {
+              "type": "embedding",
+              "embedding_dim": 50
+            },
+            "token_characters": {
+              "type": "character_encoding",
+              "embedding": {
+                "embedding_dim": 8
+              },
+              "encoder": {
+                "type": "cnn",
+                "embedding_dim": 8,
+                "num_filters": 50,
+                "ngram_filter_sizes": [
+                  3, 4, 5
+                ]
+              },
+              "dropout": 0.2
+            }
+          },
+        "seq2vec_encoder": {
+            "type": "cnn",
+            "embedding_dim": 200,
+            "num_filters": 200,
+            "ngram_filter_sizes": [
+                1,
+                2,
+                3,
+                4
+            ]
+        }
+    },
+    "iterator": {
+        "type": "bucket",
+        "sorting_keys": [
+            [
+                "tokens",
+                "num_tokens"
+            ]
+        ],
+        "padding_noise": 0,
+        "batch_size": 2
+    },
+    "trainer": {
+        "num_epochs": 15,
+        "cuda_device": 0,
+        "grad_clipping": 1,
+        "validation_metric": "+accuracy",
+        "optimizer": {
+            "type": "adam"
+        }
+    }
+}

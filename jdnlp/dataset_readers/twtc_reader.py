@@ -53,26 +53,23 @@ class TWTCDatasetReader(DatasetReader):
     def _read(self, file_path):
         data = pd.read_csv(cached_path(file_path), names=None).values
         for text, label in data:
-            yield self.text_to_instance(text, str(label))
+            inst = self.text_to_instance(text, str(label))
+            if len(vars(inst.fields["tokens"])['tokens']) > 1:
+                yield inst
 
     @overrides
     def text_to_instance(self, text: str, label: str) -> Instance:
         tokenized: List[str] = self._tokenizer.tokenize(text)
-        documents: List[List[str]] = self._sentence_splitter.split_sentences(text)
-
-        #print("TEXT!")
-        #print(documents)
-        sentence_per_document: int = len(documents)
-        word_per_sentence: List[int] = list([len(self._tokenizer.tokenize(doc)) for doc in documents])
-        # word_per_sentence: List[List[int]] = list([len(self._tokenizer.tokenize(sents)) for sents in documents])
-        #print(sentence_per_document)
-        #print(word_per_sentence)
-        #print([len(s.split(" ")) for s in documents])
+        
+        # documents: List[List[str]] = self._sentence_splitter.split_sentences(text)
+        # sentence_per_document: int = len(documents)
+        # word_per_sentence: List[int] = list([len(self._tokenizer.tokenize(doc)) for doc in documents])
         
         text_field = TextField(tokenized, self._token_indexers)
-        sentence_field = MetadataField(sentence_per_document)
-        word_field = MetadataField(word_per_sentence)
+        # sentence_field = MetadataField(sentence_per_document)
+        # word_field = MetadataField(word_per_sentence)
         label_field = LabelField(label)
 
-        fields = {'tokens': text_field, 'sentence_per_document': sentence_field, 'word_per_sentence': word_field, 'label': label_field}
+        #fields = {'tokens': text_field, 'sentence_per_document': sentence_field, 'word_per_sentence': word_field, 'label': label_field}
+        fields = {'tokens': text_field, 'label': label_field}
         return Instance(fields)

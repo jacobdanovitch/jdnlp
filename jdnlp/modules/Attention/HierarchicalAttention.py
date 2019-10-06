@@ -28,7 +28,7 @@ class HierarchialAttention(Seq2VecEncoder):
                                                   n_layers=n_layers,
                                                   dropout_p=dropout_p,
                                                   device=device
-                                                  )
+                                                  ).to(device)
 
         self.sentence_attention_model = SentenceAttention(input_size=hidden_size,
                                                           hidden_size=hidden_size,
@@ -36,7 +36,7 @@ class HierarchialAttention(Seq2VecEncoder):
                                                           n_layers=n_layers,
                                                           dropout_p=dropout_p,
                                                           device=device
-                                                          )
+                                                          ).to(device)
 
         self.device = device
 

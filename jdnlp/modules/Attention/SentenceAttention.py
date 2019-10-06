@@ -13,11 +13,13 @@ from allennlp.modules import Seq2VecEncoder
 
 from jdnlp.modules.Attention.Attention import Attention
 
-class SentenceAttention(Seq2VecEncoder):
+# Seq2VecEncoder
+class SentenceAttention(nn.Module):
     def __init__(self, input_size, hidden_size, attention_size, n_layers=1, dropout_p=0, device="cpu"):
         super().__init__()
 
         self.device=device
+        self.hidden_size = hidden_size
         self.rnn = nn.GRU(input_size=input_size,
                           hidden_size=hidden_size, #int(hidden_size / 2),
                           num_layers=n_layers,

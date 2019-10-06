@@ -39,7 +39,7 @@ class WordAttention(nn.Module):
         for sent in sentences:
             #print("sent:", sent.size())
             
-            mask = torch.tensor(sent.size(0) * [sent.size(1)]).unsqueeze(1) # sentence lengths
+            mask = torch.tensor(sent.size(0) * [sent.size(1)], device=self.device).unsqueeze(1) # sentence lengths
 
             hidden = self.rnn(sent, mask)
             hidden = hidden.contiguous()

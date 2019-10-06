@@ -12,9 +12,8 @@ from allennlp.data import Vocabulary
 from allennlp.modules import FeedForward, Seq2VecEncoder, TextFieldEmbedder
 from allennlp.models.model import Model
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
-from allennlp.nn import util
+from allennlp.nn import util, Activation
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
-
 
 from jdnlp.modules.Attention import HierarchicalAttention
 
@@ -47,15 +46,37 @@ class HierarchialAttentionNetwork(Model):
     def __init__(self, vocab: Vocabulary,
                  text_field_embedder: TextFieldEmbedder,
                  encoder: Seq2VecEncoder,
-                 classifier_feedforward: FeedForward,
+                 classifier_feedforward: FeedForward = None,
+                 loss_weights=[1, 1],
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None) -> None:
         super().__init__(vocab, regularizer)
 
         self.text_field_embedder = text_field_embedder
         self.num_classes = self.vocab.get_vocab_size("labels")
+        
         self.encoder = encoder
-        self.classifier_feedforward = classifier_feedforward
+
+        hidden_size = encoder.get_output_dim()
+        self.classifier_feedforward = classifier_feedforward or FeedForward(
+            input_dim = hidden_size,
+            num_layers = 3,
+            hidden_dims = [
+                hidden_size,
+                hidden_size,
+                2
+            ],
+            activations = [
+                Activation.by_name("relu")(),
+                Activation.by_name("relu")(),
+                Activation.by_name("linear")()
+            ],
+            dropout = [
+                0.05,
+                0.05,
+                0
+            ]
+        )
 
         if text_field_embedder.get_output_dim() != encoder.get_input_dim():
             raise ConfigurationError("The output dimension of the text_field_embedder must match the "
@@ -66,7 +87,8 @@ class HierarchialAttentionNetwork(Model):
                 "accuracy": CategoricalAccuracy(),
                 "f1": F1Measure(positive_label=1)
         }
-        self.loss = torch.nn.CrossEntropyLoss()
+        self.loss = torch.nn.CrossEntropyLoss(weight=torch.tensor(loss_weights))
+        # self.loss = nn.NLLLoss(weight=torch.tensor(loss_weights)) # , device=device
 
         initializer(self)
 
