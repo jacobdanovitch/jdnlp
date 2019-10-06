@@ -47,7 +47,7 @@
     },
     "trainer": {
         "num_epochs": 15,
-        "cuda_device": std.extVar('CUDA_DEVICE'),
+        "cuda_device": null,
         "grad_clipping": 1,
         "validation_metric": "+accuracy",
         "optimizer": {
