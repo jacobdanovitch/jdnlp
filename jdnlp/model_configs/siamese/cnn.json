@@ -1,0 +1,37 @@
+{
+    "model": {
+        "type": "siamese",
+        "text_field_embedder": {
+            "token_embedders": {
+                "tokens": {
+                    "type": "embedding",
+                    "embedding_dim": 25,
+                    "trainable": false
+                }
+            }
+        },
+        "left_encoder": {
+            "type": "cnn",
+            "embedding_dim": 25,
+            "num_filters": 75,
+            "ngram_filter_sizes": [
+                2,
+                3,
+                4
+            ]
+        }
+    },
+    "iterator": {
+        "type": "basic",
+        "batch_size" : 2
+    },
+    "trainer": {
+        "num_epochs": 1,
+        "cuda_device": -1,
+        "grad_clipping": null,
+        "validation_metric": "+loss",
+        "optimizer": {
+            "type": "adam"
+        }
+    }
+}

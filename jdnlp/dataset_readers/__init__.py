@@ -1,1 +1,2 @@
 from jdnlp.dataset_readers.twtc_reader import TWTCDatasetReader
+from jdnlp.dataset_readers.nnm_reader import NNMDatasetReader

@@ -8,7 +8,7 @@ from torch.nn.utils.rnn import PackedSequence
 
 from allennlp.modules.similarity_functions import LinearSimilarity
 from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
-from allennlp.modules.attention import LinearAttention, BilinearAttention, AdditiveAttention
+from allennlp.modules.attention import LinearAttention, BilinearAttention # , AdditiveAttention
 from allennlp.modules import Seq2VecEncoder
 
 from jdnlp.modules.Attention.Attention import Attention

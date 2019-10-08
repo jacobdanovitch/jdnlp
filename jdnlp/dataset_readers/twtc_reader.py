@@ -9,7 +9,8 @@ from allennlp.data.dataset_readers.dataset_reader import DatasetReader
 from allennlp.data.fields import LabelField, TextField, ArrayField, ListField, MetadataField
 from allennlp.data.instance import Instance
 from allennlp.data.tokenizers import Tokenizer, WordTokenizer
-from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
+# from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
+from allennlp.data.tokenizers import WordTokenizer as SpacySentenceSplitter #TODO: DELETE
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 
 import pandas as pd

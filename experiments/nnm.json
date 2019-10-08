@@ -1,0 +1,12 @@
+{
+    "dataset_reader": {
+        "type": "nnm_reader",
+        "neg_prob": 
+    },
+    "train_data_path": "datasets/nnm/train.csv",
+    "validation_data_path": "datasets/nnm/test.csv",
+    "trainer": {
+        "num_epochs": 3,
+        "cuda_device": -1
+    }
+}
