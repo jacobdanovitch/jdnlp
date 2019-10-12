@@ -17,6 +17,8 @@ from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
 from jdnlp.modules.Attention import HierarchicalAttention
 
+import logging
+logger = logging.getLogger(__name__)
 
 @Model.register("HAN")
 class HierarchialAttentionNetwork(Model):
@@ -95,8 +97,8 @@ class HierarchialAttentionNetwork(Model):
     @overrides
     def forward(self,  # type: ignore
                 tokens: Dict[str, torch.LongTensor],
-                sentence_per_document: Dict[str, torch.Tensor],
-                word_per_sentence: Dict[str, torch.Tensor],
+                sentence_per_document: Dict[str, torch.Tensor] = None,
+                word_per_sentence: Dict[str, torch.Tensor] = None,
                 label: torch.LongTensor = None) -> Dict[str, torch.Tensor]:
         """
         Parameters
@@ -120,10 +122,10 @@ class HierarchialAttentionNetwork(Model):
             A scalar loss to be optimised.
         """
         embedded = self.text_field_embedder(tokens)
-        # print("EMBEDDED: ", embedded.size())
+        logger.warn(f"EMBEDDED: {embedded.size()}")
         
-        # title_mask = util.get_text_field_mask(title)
-        # mask = util.get_text_field_mask(tokens)
+        mask = util.get_text_field_mask(tokens)
+        logger.warn(f"MASK: {mask}")
 
         doc_vecs, sent_attention, word_attention = self.encoder(embedded, sentence_per_document, word_per_sentence)
 
@@ -135,22 +137,6 @@ class HierarchialAttentionNetwork(Model):
                 metric(logits, label)
             output_dict["loss"] = loss
 
-        return output_dict
-
-    @overrides
-    def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-        """
-        Does a simple argmax over the class probabilities, converts indices to string labels, and
-        adds a ``"label"`` key to the dictionary with the result.
-        """
-        class_probabilities = F.softmax(output_dict['logits'], dim=-1)
-        output_dict['class_probabilities'] = class_probabilities
-
-        predictions = class_probabilities.cpu().data.numpy()
-        argmax_indices = numpy.argmax(predictions, axis=-1)
-        labels = [self.vocab.get_token_from_index(x, namespace="labels")
-                  for x in argmax_indices]
-        output_dict['label'] = labels
         return output_dict
 
     @overrides

@@ -40,15 +40,8 @@
         }
     },
     "iterator": {
-        "type": "bucket",
-        "sorting_keys": [
-            [
-                "tokens",
-                "num_tokens"
-            ]
-        ],
-        "padding_noise": 0,
-        "batch_size": 2
+        "type": "basic",
+        "batch_size" : 2
     },
     "trainer": {
         "num_epochs": 1,

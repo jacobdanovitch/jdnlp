@@ -15,6 +15,7 @@ from jdnlp.modules.Attention.WordAttention import WordAttention
 from jdnlp.modules.Attention.SentenceAttention import SentenceAttention
 
 import logging
+logger = logging.getLogger(__name__)
 
 @Seq2VecEncoder.register("HierarchicalAttention")
 class HierarchialAttention(Seq2VecEncoder):
@@ -48,12 +49,30 @@ class HierarchialAttention(Seq2VecEncoder):
     def get_output_dim(self) -> int:
         return self.sentence_attention_model.hidden_size
 
-    
+
+    @overrides
     def forward(self, document: torch.Tensor, sentence_per_document, word_per_sentence):
-        batch_size, max_sentence_length, max_word_length = document.size()
-        # |document| = (batch_size, max_sentence_length, max_word_length)
-        # |sentence_per_document| = (batch_size)
-        # |word_per_sentence| = (batch_size, max_sentence_length)
+        """
+        Parameters
+        ----------
+        document : Dict[str, Variable], required
+            [B, N_SENT, N_WORDS, E_DIM]
+        sentence_per_document : Dict[str, torch.Tensor], required
+            The number of sentences for each document.
+        word_per_sentence : Dict[str, torch.Tensor], required
+            The number of words for each sentence in each document.
+        label : Variable, optional (default = None)
+            A variable representing the label for each instance in the batch.
+
+        Returns
+        -------
+        An output dictionary consisting of:
+        class_probabilities : torch.FloatTensor
+            A tensor of shape ``(batch_size, num_classes)`` representing a distribution over the
+            label classes for each instance.
+        loss : torch.FloatTensor, optional
+            A scalar loss to be optimised.
+        """
 
         #print("Document:", document.shape)
 

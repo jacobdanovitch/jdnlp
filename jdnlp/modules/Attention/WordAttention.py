@@ -11,6 +11,8 @@ from allennlp.modules.attention import LinearAttention
 
 from jdnlp.modules.Attention.Attention import Attention
 
+import logging
+logger = logging.getLogger(__name__)
 
 class WordAttention(nn.Module):
     def __init__(self, input_size, hidden_size, attention_size, n_layers=1, dropout_p=0, device="cpu"):
