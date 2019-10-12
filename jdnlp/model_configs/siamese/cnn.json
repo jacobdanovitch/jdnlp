@@ -13,11 +13,12 @@
         "left_encoder": {
             "type": "cnn",
             "embedding_dim": 25,
-            "num_filters": 75,
+            "num_filters": 25,
             "ngram_filter_sizes": [
-                2,
                 3,
-                4
+                4,
+                5,
+                6
             ]
         }
     },

@@ -5,27 +5,28 @@
             "token_embedders": {
                 "tokens": {
                     "type": "embedding",
-                    "embedding_dim": 25,
-                    "trainable": false
+                    "embedding_dim": 200,
+                    "trainable": true
                 }
             }
         },
+        "prediction_threshold": 0.5,
         "left_encoder": {
             "type": "lstm",
-            "input_size": 25,
-            "hidden_size": 25,
+            "input_size": 200,
+            "hidden_size": 200,
             "num_layers": 1
         }
     },
     "iterator": {
         "type": "basic",
-        "batch_size" : 2
+        "batch_size" : 8
     },
     "trainer": {
-        "num_epochs": 1,
-        "cuda_device": -1,
+        "num_epochs": 10,
+        "cuda_device": 0,
         "grad_clipping": null,
-        "validation_metric": "+loss",
+        "validation_metric": "+accuracy",
         "optimizer": {
             "type": "adam"
         }
