@@ -74,30 +74,8 @@ class HierarchialAttention(Seq2VecEncoder):
             A scalar loss to be optimised.
         """
 
-        #print("Document:", document.shape)
-
-        # Remove sentence-padding in document by using "pack_padded_sequence.data"
-        #print("Sentences per doc:", sentence_per_document)
-        packed_sentences = pack(document,
-                                lengths=sentence_per_document,#.tolist(),
-                                batch_first=True,
-                                enforce_sorted=False)
-        # |packed_sentences.data| = (sum(sentence_length), max_word_length)
-        #print("Packed sentences:", packed_sentences.data.shape)
-
-        # Remove sentence-padding in word_per_sentence "pack_padded_sequence.data"
-        # word_per_sentence = torch.tensor(word_per_sentence, device=self.device)
-        #print("Words per sentence:", word_per_sentence)
-        wps_padded = pad(list(map(torch.tensor, word_per_sentence)), batch_first=True)
-        packed_words_per_sentence = pack(wps_padded,
-                                         lengths=sentence_per_document,#.tolist(),
-                                         batch_first=True,
-                                         enforce_sorted=False)
-        # |packed_words_per_sentence.data| = (sum(sentence_length))
-
         # Get sentence vectors
-        sentence_vecs, word_weights = self.word_attention_model(document,
-                                                                packed_words_per_sentence.data)
+        sentence_vecs, word_weights = self.word_attention_model(document)
         # |sentence_vecs| = (sum(sentence_length), hidden_size)
         # |word_weights| = (sum(sentence_length, max(word_per_sentence))
         # print("Sentence vecs:", sentence_vecs.size())

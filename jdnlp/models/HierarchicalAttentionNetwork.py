@@ -9,7 +9,7 @@ from overrides import overrides
 
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import Vocabulary
-from allennlp.modules import FeedForward, Seq2VecEncoder, TextFieldEmbedder
+from allennlp.modules import FeedForward, Seq2VecEncoder, Seq2SeqEncoder, TextFieldEmbedder, Embedding
 from allennlp.models.model import Model
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn import util, Activation
@@ -127,7 +127,7 @@ class HierarchialAttentionNetwork(Model):
         mask = util.get_text_field_mask(tokens)
         logger.warn(f"MASK: {mask}")
 
-        doc_vecs, sent_attention, word_attention = self.encoder(embedded, sentence_per_document, word_per_sentence)
+        doc_vecs, sent_attention, word_attention = self.encoder(embedded, mask)
 
         logits = self.classifier_feedforward(doc_vecs)
         output_dict = {'logits': logits}
