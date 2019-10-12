@@ -1,6 +1,7 @@
 {
     "dataset_reader": {
-        "type": "twtc_reader"
+        "type": "twtc_reader",
+        "lazy": true
     },
     "train_data_path": "datasets/twtc/train.csv",
     "validation_data_path": "datasets/twtc/test.csv",
@@ -10,17 +11,24 @@
             "token_embedders": {
                 "tokens": {
                     "type": "embedding",
-                    "embedding_dim": 200,
+                    "embedding_dim": 25,
                     "trainable": true
                 }
             }
         },
         "encoder": {
             "type": "HierarchicalAttention",
-            "input_size": 200,
-            "hidden_size": 200,
-            "attention_size": 200,
-            "device": "cuda:0"
+            "word_encoder": {
+                "type": "gru",
+                "input_size": 25,
+                "hidden_size": 25,
+                "num_layers": 1
+            },
+            "sent_encoder": {
+                "type": "intra_sentence_attention",
+                "input_dim": 25,
+                "output_dim": 25
+            }
         },
         "loss_weights": [
             0.1, 
@@ -28,15 +36,8 @@
         ]
     },
     "iterator": {
-        "type": "bucket",
-        "sorting_keys": [
-            [
-                "tokens",
-                "num_tokens"
-            ]
-        ],
-        "padding_noise": 0,
-        "batch_size": 2
+        "type": "basic",
+        "batch_size" : 2
     },
     "trainer": {
         "num_epochs": 15,

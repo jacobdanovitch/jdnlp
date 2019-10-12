@@ -17,6 +17,7 @@ from copy import deepcopy
 
 import logging
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.CRITICAL)
 
 """
 input_size: int, 
@@ -35,32 +36,18 @@ class HierarchialAttention(Seq2VecEncoder):
     ):
         super().__init__()
 
-        """
-        self.word_attention_model = WordAttention(input_size=input_size,
-                                                  hidden_size=hidden_size,
-                                                  attention_size=attention_size,
-                                                  n_layers=n_layers,
-                                                  dropout_p=dropout_p,
-                                                  ).to(device)
-
-        self.sentence_attention_model = SentenceAttention(input_size=hidden_size,
-                                                          hidden_size=hidden_size,
-                                                          attention_size=attention_size,
-                                                          n_layers=n_layers,
-                                                          dropout_p=dropout_p,
-                                                          ).to(device)
-
-        self.device = device
-        """
-
         self.input_dim = word_encoder.get_input_dim()
         self.output_dim = sent_encoder.get_output_dim()
 
         self.word_encoder = TimeDistributed(word_encoder)
         self.sent_encoder = sent_encoder
 
-        self.word_attn = Attention(word_encoder.get_output_dim())
-        self.sent_attn = Attention(sent_encoder.get_output_dim())
+        self.word_attn = Attention(self.input_dim)
+        self.sent_attn = Attention(self.output_dim)
+        
+        self.sent_enc_grad = 0
+        self.params = None
+        # logging.critical(list(sent_encoder.named_parameters()))
 
     @overrides
     def forward(self, document: torch.Tensor, mask: torch.Tensor):
@@ -87,20 +74,32 @@ class HierarchialAttention(Seq2VecEncoder):
         """
 
         # mask is broken
-        sentence_vecs = self.word_encoder(document, mask=mask)
-        logger.warn(f"Word encodings: {sentence_vecs.size()}")
+        
+        sentence_vecs = self.word_encoder(document, mask=None)
+        # logger.warn(f"Word encodings: {sentence_vecs.size()}")
         
         sentence_vecs, word_weights = self.word_attn(sentence_vecs, return_attn_distribution=True) # self.word_attention_model(document, mask)
-        logger.warn(f"Word-attn: {sentence_vecs.size()}")
-        logger.warn(f"Word weights: {word_weights.size()}\n")
+        # logger.warn(f"Word-attn: {sentence_vecs.size()}")
+        # logger.warn(f"Word weights: {word_weights.size()}\n")
 
-        doc_vecs = self.sent_encoder(sentence_vecs, mask=None)
+        doc_vecs = self.sent_encoder(sentence_vecs, mask=None)# .sum(dim=1)
         # doc_vecs = self.word_encoder(sentence_vecs.unsqueeze(0), mask=None)
-        logger.warn(f"Sent encodings: {doc_vecs.size()}")
+        # logger.warn(f"Sent encodings: {doc_vecs.size()}")
 
+        # sentence_weights = None
         doc_vecs, sentence_weights = self.sent_attn(sentence_vecs, return_attn_distribution=True) # sentence_attention_model , reduction_dim=-1
         logger.warn(f"Doc vecs: {doc_vecs.size()}")
-        logger.warn(f"Sent weights: {sentence_weights.size()}")
+        # logger.warn(f"Sent weights: {sentence_weights.size()}")
+        
+        #  if name == '_output_projection.weight'
+        # self.sent_enc_grad += sum([parameter.grad if parameter is None else 0 for name, parameter in self.word_encoder.named_parameters()])
+        params = list(self.word_encoder.parameters())
+        if self.params is not None and params == self.params:
+            logger.critical(True)
+        self.params = params
+        # if torch.rand(1).item() > 0.75:
+            # logger.critical(list(self.word_encoder.parameters()))
+            # logger.critical(self.sent_enc_grad)
 
         return doc_vecs, sentence_weights, word_weights
 

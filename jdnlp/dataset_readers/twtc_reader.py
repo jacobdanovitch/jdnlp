@@ -48,6 +48,8 @@ class TWTCDatasetReader(DatasetReader):
         self._tokenizer = tokenizer or WordTokenizer()
         self._sentence_splitter = SpacySentenceSplitter()
         self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
+        
+        self.cache_data('/home/jacobgdt/.allennlp/cache/datasets')
 
 
     @overrides
