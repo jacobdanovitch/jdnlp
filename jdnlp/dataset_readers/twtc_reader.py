@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 import json
 import logging
 
@@ -9,8 +9,8 @@ from allennlp.data.dataset_readers.dataset_reader import DatasetReader
 from allennlp.data.fields import LabelField, TextField, ArrayField, ListField, MetadataField
 from allennlp.data.instance import Instance
 from allennlp.data.tokenizers import Tokenizer, WordTokenizer
-# from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
-from allennlp.data.tokenizers import WordTokenizer as SpacySentenceSplitter #TODO: DELETE
+from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
+# from allennlp.data.tokenizers import WordTokenizer as SpacySentenceSplitter #TODO: DELETE
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 
 import pandas as pd
@@ -52,25 +52,31 @@ class TWTCDatasetReader(DatasetReader):
 
     @overrides
     def _read(self, file_path):
-        data = pd.read_csv(cached_path(file_path), header=None).values
+        data = iter(pd.read_csv(cached_path(file_path), header=None).values)
         for text, label in data:
             inst = self.text_to_instance(text, str(label))
-            if len(vars(inst.fields["tokens"])['tokens']) > 1:
-                yield inst
+            # if len(vars(inst.fields["tokens"])['tokens']) > 1:
+            #    yield inst
+            yield inst
 
     @overrides
-    def text_to_instance(self, text: str, label: str) -> Instance:
-        tokenized: List[str] = self._tokenizer.tokenize(text)
-        
-        # documents: List[List[str]] = self._sentence_splitter.split_sentences(text)
+    def text_to_instance(self, document: str, label: str) -> Instance:
+        tokenized: List[str] = self._tokenizer.tokenize(document)
+
         # sentence_per_document: int = len(documents)
         # word_per_sentence: List[int] = list([len(self._tokenizer.tokenize(doc)) for doc in documents])
         
-        text_field = TextField(tokenized, self._token_indexers)
+        sentences: List[str] = self._sentence_splitter.split_sentences(document)
+        tokenized_sents: List[int] = (self._tokenizer.tokenize(sent) for sent in sentences)
+
+        sent_fields = ListField([TextField(s, self._token_indexers) for s in tokenized_sents])
+
+        # text_field = TextField(tokenized, self._token_indexers)
         # sentence_field = MetadataField(sentence_per_document)
         # word_field = MetadataField(word_per_sentence)
         label_field = LabelField(label)
 
         #fields = {'tokens': text_field, 'sentence_per_document': sentence_field, 'word_per_sentence': word_field, 'label': label_field}
-        fields = {'tokens': text_field, 'label': label_field}
+        # fields = {'tokens': text_field, 'label': label_field}
+        fields = {'tokens': sent_fields, 'label': label_field}
         return Instance(fields)

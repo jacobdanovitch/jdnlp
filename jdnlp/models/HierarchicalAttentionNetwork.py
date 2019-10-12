@@ -9,7 +9,7 @@ from overrides import overrides
 
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import Vocabulary
-from allennlp.modules import FeedForward, Seq2VecEncoder, TextFieldEmbedder
+from allennlp.modules import FeedForward, Seq2VecEncoder, Seq2SeqEncoder, TextFieldEmbedder, Embedding
 from allennlp.models.model import Model
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn import util, Activation
@@ -17,6 +17,8 @@ from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
 from jdnlp.modules.Attention import HierarchicalAttention
 
+import logging
+logger = logging.getLogger(__name__)
 
 @Model.register("HAN")
 class HierarchialAttentionNetwork(Model):
@@ -87,7 +89,9 @@ class HierarchialAttentionNetwork(Model):
                 "accuracy": CategoricalAccuracy(),
                 "f1": F1Measure(positive_label=1)
         }
-        self.loss = torch.nn.CrossEntropyLoss(weight=torch.tensor(loss_weights))
+        
+        weights = torch.FloatTensor(loss_weights)
+        self.loss = nn.CrossEntropyLoss(weight=weights)
         # self.loss = nn.NLLLoss(weight=torch.tensor(loss_weights)) # , device=device
 
         initializer(self)
@@ -95,8 +99,8 @@ class HierarchialAttentionNetwork(Model):
     @overrides
     def forward(self,  # type: ignore
                 tokens: Dict[str, torch.LongTensor],
-                sentence_per_document: Dict[str, torch.Tensor],
-                word_per_sentence: Dict[str, torch.Tensor],
+                sentence_per_document: Dict[str, torch.Tensor] = None,
+                word_per_sentence: Dict[str, torch.Tensor] = None,
                 label: torch.LongTensor = None) -> Dict[str, torch.Tensor]:
         """
         Parameters
@@ -120,37 +124,26 @@ class HierarchialAttentionNetwork(Model):
             A scalar loss to be optimised.
         """
         embedded = self.text_field_embedder(tokens)
-        # print("EMBEDDED: ", embedded.size())
+        logger.warn(f"Word vecs: {embedded.size()}")
         
-        # title_mask = util.get_text_field_mask(title)
-        # mask = util.get_text_field_mask(tokens)
+        mask = util.get_text_field_mask(tokens, num_wrapping_dims=1)
+        # logger.critical(f"MASK: {mask}")
 
-        doc_vecs, sent_attention, word_attention = self.encoder(embedded, sentence_per_document, word_per_sentence)
+        doc_vecs, sent_attention, word_attention = self.encoder(embedded, mask)
+        logits = self.classifier_feedforward(doc_vecs) # .unsqueeze(-1)
+        logger.warn(f"Logits: {logits.size()}")
 
-        logits = self.classifier_feedforward(doc_vecs)
-        output_dict = {'logits': logits}
+        output_dict = {
+            'logits': logits,
+            'word_attention': word_attention,
+            'sentence_attention': sent_attention
+        }
         if label is not None:
             loss = self.loss(logits, label)
             for metric in self.metrics.values():
                 metric(logits, label)
             output_dict["loss"] = loss
 
-        return output_dict
-
-    @overrides
-    def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-        """
-        Does a simple argmax over the class probabilities, converts indices to string labels, and
-        adds a ``"label"`` key to the dictionary with the result.
-        """
-        class_probabilities = F.softmax(output_dict['logits'], dim=-1)
-        output_dict['class_probabilities'] = class_probabilities
-
-        predictions = class_probabilities.cpu().data.numpy()
-        argmax_indices = numpy.argmax(predictions, axis=-1)
-        labels = [self.vocab.get_token_from_index(x, namespace="labels")
-                  for x in argmax_indices]
-        output_dict['label'] = labels
         return output_dict
 
     @overrides
