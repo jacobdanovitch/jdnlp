@@ -1,34 +1,46 @@
+# https://github.com/gaurav104/TextClassification/blob/master/Hierarchical%20Attention%20Network%20Text%20Classification.ipynb
+
 from typing import Dict, Optional
 from overrides import overrides
 
 import torch
 import torch.nn as nn
 
-from torch.nn.utils.rnn import pad_sequence as pad
-from torch.nn.utils.rnn import pack_padded_sequence as pack
-from torch.nn.utils.rnn import pad_packed_sequence as unpack
-from torch.nn.utils.rnn import PackedSequence
+from allennlp.modules import TimeDistributed, Seq2VecEncoder, Seq2SeqEncoder
 
-from allennlp.modules import Seq2VecEncoder
-
+from jdnlp.modules.Attention.Attention import Attention
 from jdnlp.modules.Attention.WordAttention import WordAttention
 from jdnlp.modules.Attention.SentenceAttention import SentenceAttention
+from jdnlp.modules.Attention.TimeDistributedAttention import TimeDistributedAttention
+
+from copy import deepcopy
 
 import logging
 logger = logging.getLogger(__name__)
 
+"""
+input_size: int, 
+hidden_size: int, 
+attention_size: int,
+n_layers: int = 1, 
+dropout_p: float = 0.05, 
+device="cpu
+"""
+
 @Seq2VecEncoder.register("HierarchicalAttention")
 class HierarchialAttention(Seq2VecEncoder):
-    def __init__(self, input_size: int, hidden_size: int, attention_size: int,
-                 n_layers: int = 1, dropout_p: float = 0.05, device="cpu"):
+    def __init__(self, 
+    word_encoder: Seq2SeqEncoder,
+    sent_encoder: Seq2SeqEncoder
+    ):
         super().__init__()
 
+        """
         self.word_attention_model = WordAttention(input_size=input_size,
                                                   hidden_size=hidden_size,
                                                   attention_size=attention_size,
                                                   n_layers=n_layers,
                                                   dropout_p=dropout_p,
-                                                  device=device
                                                   ).to(device)
 
         self.sentence_attention_model = SentenceAttention(input_size=hidden_size,
@@ -36,22 +48,22 @@ class HierarchialAttention(Seq2VecEncoder):
                                                           attention_size=attention_size,
                                                           n_layers=n_layers,
                                                           dropout_p=dropout_p,
-                                                          device=device
                                                           ).to(device)
 
         self.device = device
+        """
+
+        self.input_dim = word_encoder.get_input_dim()
+        self.output_dim = sent_encoder.get_output_dim()
+
+        self.word_encoder = TimeDistributed(word_encoder)
+        self.sent_encoder = sent_encoder
+
+        self.word_attn = Attention(word_encoder.get_output_dim())
+        self.sent_attn = Attention(sent_encoder.get_output_dim())
 
     @overrides
-    def get_input_dim(self) -> int:
-        return self.word_attention_model.input_size
-
-    @overrides
-    def get_output_dim(self) -> int:
-        return self.sentence_attention_model.hidden_size
-
-
-    @overrides
-    def forward(self, document: torch.Tensor, sentence_per_document, word_per_sentence):
+    def forward(self, document: torch.Tensor, mask: torch.Tensor):
         """
         Parameters
         ----------
@@ -74,23 +86,32 @@ class HierarchialAttention(Seq2VecEncoder):
             A scalar loss to be optimised.
         """
 
-        # Get sentence vectors
-        sentence_vecs, word_weights = self.word_attention_model(document)
-        # |sentence_vecs| = (sum(sentence_length), hidden_size)
-        # |word_weights| = (sum(sentence_length, max(word_per_sentence))
-        # print("Sentence vecs:", sentence_vecs.size())
+        # mask is broken
+        sentence_vecs = self.word_encoder(document, mask=mask)
+        logger.warn(f"Word encodings: {sentence_vecs.size()}")
+        
+        sentence_vecs, word_weights = self.word_attn(sentence_vecs, return_attn_distribution=True) # self.word_attention_model(document, mask)
+        logger.warn(f"Word-attn: {sentence_vecs.size()}")
+        logger.warn(f"Word weights: {word_weights.size()}\n")
 
-        # "packed_sentences" have same information to recover PackedSequence for sentence
-        packed_sentence_vecs = PackedSequence(data=sentence_vecs,
-                                              batch_sizes=packed_sentences.batch_sizes,
-                                              sorted_indices=packed_sentences.sorted_indices,
-                                              unsorted_indices=packed_sentences.unsorted_indices)
+        doc_vecs = self.sent_encoder(sentence_vecs, mask=None)
+        # doc_vecs = self.word_encoder(sentence_vecs.unsqueeze(0), mask=None)
+        logger.warn(f"Sent encodings: {doc_vecs.size()}")
 
-        # print("Packed sentences:", packed_sentence_vecs.data.size())
-        # Get document vectors
-        doc_vecs, sentence_weights = self.sentence_attention_model(sentence_vecs, sentence_per_document)
-        # doc_vecs, sentence_weights = self.sentence_attention_model(sentence_vecs, sentence_per_document)
-        # |doc_vecs| = (batch_size, hidden_size)
-        # |sentence_weights| = (batch_size)
+        doc_vecs, sentence_weights = self.sent_attn(sentence_vecs, return_attn_distribution=True) # sentence_attention_model , reduction_dim=-1
+        logger.warn(f"Doc vecs: {doc_vecs.size()}")
+        logger.warn(f"Sent weights: {sentence_weights.size()}")
 
         return doc_vecs, sentence_weights, word_weights
+
+
+    @overrides
+    def get_input_dim(self) -> int:
+        # return self.word_attention_model.input_size
+        return self.input_dim
+
+    @overrides
+    def get_output_dim(self) -> int:
+        # return self.sentence_attention_model.hidden_size
+        return self.output_dim
+

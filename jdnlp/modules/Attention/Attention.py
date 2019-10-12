@@ -4,6 +4,9 @@ import torch.nn.functional as F
 
 from torch.nn import Parameter, Linear
 
+import logging
+logger = logging.getLogger(__name__)
+
 def new_parameter(*size):
     out = Parameter(torch.FloatTensor(*size))
     torch.nn.init.xavier_normal_(out)
@@ -13,7 +16,7 @@ def new_parameter(*size):
 class Attention(nn.Module):
     """ Simple multiplicative attention"""
     def __init__(self, attention_size):
-        super(Attention, self).__init__()
+        super().__init__()
         self.attention = new_parameter(attention_size, 1)
 
     def forward(self, x_in, reduction_dim=-2, return_attn_distribution=False):
@@ -31,11 +34,13 @@ class Attention(nn.Module):
         # add one dimension at the end and get a distribution out of scores
         attn_distrib = F.softmax(attn_score.squeeze(), dim=-1).unsqueeze(-1)
         scored_x = x_in * attn_distrib
-        weighted_sum = torch.sum(scored_x, dim=reduction_dim)
+        if reduction_dim:
+            scored_x = torch.sum(scored_x, dim=reduction_dim)
+        
         if return_attn_distribution:
-            return attn_distrib.reshape(x_in.shape[0], -1), weighted_sum
-        else:
-            return weighted_sum
+            return scored_x, attn_distrib.reshape(x_in.shape[0], -1)
+
+        return scored_x
 
 
 class _Attention(nn.Module):

@@ -89,7 +89,9 @@ class HierarchialAttentionNetwork(Model):
                 "accuracy": CategoricalAccuracy(),
                 "f1": F1Measure(positive_label=1)
         }
-        self.loss = torch.nn.CrossEntropyLoss(weight=torch.tensor(loss_weights))
+        
+        weights = torch.FloatTensor(loss_weights)
+        self.loss = nn.CrossEntropyLoss(weight=weights)
         # self.loss = nn.NLLLoss(weight=torch.tensor(loss_weights)) # , device=device
 
         initializer(self)
@@ -122,15 +124,20 @@ class HierarchialAttentionNetwork(Model):
             A scalar loss to be optimised.
         """
         embedded = self.text_field_embedder(tokens)
-        logger.warn(f"EMBEDDED: {embedded.size()}")
+        logger.warn(f"Word vecs: {embedded.size()}")
         
-        mask = util.get_text_field_mask(tokens)
-        logger.warn(f"MASK: {mask}")
+        mask = util.get_text_field_mask(tokens, num_wrapping_dims=1)
+        # logger.critical(f"MASK: {mask}")
 
         doc_vecs, sent_attention, word_attention = self.encoder(embedded, mask)
+        logits = self.classifier_feedforward(doc_vecs) # .unsqueeze(-1)
+        logger.warn(f"Logits: {logits.size()}")
 
-        logits = self.classifier_feedforward(doc_vecs)
-        output_dict = {'logits': logits}
+        output_dict = {
+            'logits': logits,
+            'word_attention': word_attention,
+            'sentence_attention': sent_attention
+        }
         if label is not None:
             loss = self.loss(logits, label)
             for metric in self.metrics.values():
