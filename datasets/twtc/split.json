@@ -1,0 +1,22 @@
+{
+    "data": {
+        "path": "datasets/twtc/labelled.csv",
+        "usecols": ["report", "label"]
+    },
+    "type": "data_splitter",
+    "transform": {
+        "test_size": 0.2
+    },
+    "write_config": [
+        {
+            "path": "datasets/twtc/train.csv",
+            "index": false,
+            "header": null
+        },
+        {
+            "path": "datasets/twtc/test.csv",
+            "index": false,
+            "header": null
+        }
+    ]
+}

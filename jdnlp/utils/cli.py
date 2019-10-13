@@ -1,6 +1,8 @@
 import argparse
-
 from overrides import overrides
+
+from allennlp.common.params import Params
+from allennlp.common.checks import ConfigurationError
 
 class ArgumentParserWithDefaults(argparse.ArgumentParser):
     """
@@ -29,3 +31,12 @@ class ArgumentParserWithDefaults(argparse.ArgumentParser):
             description = kwargs.get("help") or ""
             kwargs["help"] = f"{description} (default = {default})"
         super().add_argument(*args, **kwargs)
+
+
+
+def from_params_with_check(params: Params, param_name: str, message_override: str = None):
+    param = params.get(param_name, None)
+    if not param:
+        raise ConfigurationError(f'Must specify {message_override or param_name}.')
+    
+    return param

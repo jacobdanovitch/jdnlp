@@ -1,0 +1,17 @@
+{
+    "data": {
+        "path": "datasets/twtc/test.csv",
+        "header": null
+    },
+    "type": "data_augmenter",
+    "transform": {
+        "processes": 4,
+        "augments": {
+            "prob": 1,
+            "substitute_word_synonyms": {
+                "num": 4,
+                "pos": "NOUN"
+            }
+        }
+    }
+}

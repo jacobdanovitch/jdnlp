@@ -1,0 +1,11 @@
+{
+    "data": {
+        "path": "datasets/twtc/train.csv",
+        "header": null
+    },
+    "type": "data_resampler",
+    "transform": {
+        "minority_class": 1,
+        "sample_pct": 0.5
+    }
+}

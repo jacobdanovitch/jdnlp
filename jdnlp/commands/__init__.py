@@ -6,8 +6,10 @@ from typing import *
 import argparse
 
 from allennlp.commands import Subcommand
+from allennlp.common.util import import_submodules
 
 from jdnlp.commands.train import Train
+from jdnlp.commands.transform_data import TransformData
 from jdnlp.utils.cli import ArgumentParserWithDefaults
 
 def create_parser(
@@ -26,14 +28,24 @@ def create_parser(
 
     subcommands = {
         # Default commands
-        # "transform-data": TransformData()
-        "train": Train(),
+        "transform-data": TransformData(),
+        # "train": Train(),
         # "evaluate": Evaluate(),
         **subcommand_overrides,
     }
 
     for name, subcommand in subcommands.items():
         subparser = subcommand.add_subparser(name, subparsers)
+        # configure doesn't need include-package because it imports
+        # whatever classes it needs.
+        if name != "configure":
+            subparser.add_argument(
+                "--include-package",
+                type=str,
+                action="append",
+                default=[],
+                help="additional packages to include",
+            )
 
     return parser
 
@@ -50,8 +62,8 @@ def main(prog: str = None, subcommand_overrides: Dict[str, Subcommand] = None) -
     # so give the user some help.
     if "func" in dir(args):
         # Import any additional modules needed (to register custom classes).
-        # for package_name in getattr(args, "include_package", ()):
-        #    import_submodules(package_name)
+        for package_name in getattr(args, "include_package", ()):
+            import_submodules(package_name)
         args.func(args)
     else:
         parser.print_help()

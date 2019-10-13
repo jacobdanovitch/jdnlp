@@ -15,7 +15,7 @@ from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn import util, Activation
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
-from jdnlp.utils import compare
+# from jdnlp.utils import compare
 
 import logging
 logger = logging.getLogger(__name__)

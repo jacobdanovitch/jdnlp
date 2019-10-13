@@ -17,7 +17,7 @@ from allennlp.data.tokenizers.token import show_token
 import pandas as pd
 import numpy as np
 
-from jdnlp.data.sampling import triplet_sample_iterator
+from jdnlp.utils.data import triplet_sample_iterator
 from jdnlp.utils.parallel import tqdm_parallel
 
 logger = logging.getLogger(__name__)
