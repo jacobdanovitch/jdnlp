@@ -2,7 +2,7 @@
     "dataset_reader": {
         "type": "twtc_reader"
     },
-    "train_data_path": "tests/fixtures/twtc_sample.csv",
+    "train_data_path": "datasets/twtc/test.csv",
     "validation_data_path": "tests/fixtures/twtc_sample.csv",
     "model": {
         "type": "HAN",
@@ -24,9 +24,9 @@
                 "num_layers": 1
             },
             "sent_encoder": {
-                "type": "lstm",
-                "input_size": 25,
-                "hidden_size": 25
+                "type": "intra_sentence_attention",
+                "input_dim": 25,
+                "output_dim": 25
             }
         },
         "classifier_feedforward": {
@@ -35,12 +35,12 @@
             "hidden_dims": [
                 25,
                 25,
-                2
+                1
             ],
             "activations": [
                 "sigmoid",
                 "sigmoid",
-                "sigmoid"
+                "linear"
             ]
         }
     },
@@ -54,8 +54,8 @@
         "grad_clipping": 5,
         "validation_metric": "+accuracy",
         "optimizer": {
-            "type": "adagrad",
-            "lr": 0.5
+            "type": "sgd",
+            "lr": 1.0
         }
     }
 }

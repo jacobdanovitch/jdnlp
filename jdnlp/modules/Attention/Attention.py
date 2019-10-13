@@ -31,7 +31,7 @@ class Attention(nn.Module):
         In two steps we convert [batch, sent_len, num_words_in_category, num_categories] into [batch, num_categories]
         """
         # calculate attn weights
-        attn_score = x_in.matmul(self.attention)
+        attn_score = torch.matmul(x_in, self.attention)
         # add one dimension at the end and get a distribution out of scores
         attn_distrib = self.softmax(attn_score.squeeze()).unsqueeze(-1)
         scored_x = x_in * attn_distrib

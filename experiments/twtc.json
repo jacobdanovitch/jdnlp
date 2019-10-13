@@ -6,11 +6,17 @@
     "validation_data_path": "datasets/twtc/test.csv",
     "iterator": {
         "type": "basic",
-        "batch_size" : 8
+        "batch_size" : 2
     },
-    "trainer": {
-        "num_epochs": 3,
-        "cuda_device": 0,
-        "validation_metric": "+accuracy"
-    }
+
+    "model.text_field_embedder.token_embedders.tokens.pretrained_file": "https://allennlp.s3.amazonaws.com/datasets/glove/glove.840B.300d.txt.gz",
+    "model.loss_weights": [
+        0.1, 
+        3.5
+    ],
+
+    "trainer.cuda_device": 0,
+    "trainer.num_epochs": 25,
+    "trainer.validation_metric": "+f1",
+    "trainer.optimizer.lr": 0.025
 }

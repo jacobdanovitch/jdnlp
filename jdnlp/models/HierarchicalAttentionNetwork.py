@@ -15,7 +15,7 @@ from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn import util, Activation
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
-from jdnlp.modules.Attention import HierarchicalAttention
+from jdnlp.utils import compare
 
 import logging
 logger = logging.getLogger(__name__)
@@ -56,8 +56,9 @@ class HierarchialAttentionNetwork(Model):
 
         self.text_field_embedder = text_field_embedder
         self.num_classes = self.vocab.get_vocab_size("labels")
+        assert self.num_classes == len(loss_weights), "Incorrect # of classes"
         
-        self.encoder = encoder
+        self.encoder = encoder.train()
 
         hidden_size = encoder.get_output_dim()
         self.classifier_feedforward = classifier_feedforward or FeedForward(
@@ -66,7 +67,7 @@ class HierarchialAttentionNetwork(Model):
             hidden_dims = [
                 hidden_size,
                 hidden_size,
-                2
+                num_classes
             ],
             activations = [
                 Activation.by_name("relu")(),
@@ -74,9 +75,9 @@ class HierarchialAttentionNetwork(Model):
                 Activation.by_name("linear")()
             ],
             dropout = [
-                0.05,
-                0.05,
-                0
+                0.2,
+                0.2,
+                0.0
             ]
         )
 
@@ -94,6 +95,7 @@ class HierarchialAttentionNetwork(Model):
         self.loss = nn.CrossEntropyLoss(weight=weights)
         # self.loss = nn.NLLLoss(weight=weights)
 
+        self.nn = None
         initializer(self)
 
     @overrides
@@ -124,11 +126,18 @@ class HierarchialAttentionNetwork(Model):
             A scalar loss to be optimised.
         """
         embedded = self.text_field_embedder(tokens)
+        # assert embedded.requires_grad
         
         # mask = util.get_text_field_mask(tokens, num_wrapping_dims=1)
         # logger.critical(f"MASK: {mask}")
         doc_vecs, sent_attention, word_attention = self.encoder(embedded, None)
         logits = self.classifier_feedforward(doc_vecs)
+        logits = F.log_softmax(logits, dim=-1)
+        """
+        if self.nn:
+            pass # logger.critical(compare(self.nn, self.classifier_feedforward))
+        self.nn = self.classifier_feedforward
+        """
 
         output_dict = {
             'logits': logits,
@@ -137,6 +146,7 @@ class HierarchialAttentionNetwork(Model):
         }
         if label is not None:
             loss = self.loss(logits, label)
+            # loss.register_hook(lambda grad: logger.critical(grad))
             # logger.critical(dir(loss))
             # loss.backward(retain_graph=True)
             # logger.critical(loss.grad)
@@ -155,5 +165,4 @@ class HierarchialAttentionNetwork(Model):
             "f1": self.metrics["f1"].get_metric(reset=reset)[2],
             "accuracy": self.metrics["accuracy"].get_metric(reset=reset)
         }
-
 

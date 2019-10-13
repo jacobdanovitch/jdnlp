@@ -76,7 +76,7 @@ class TWTCDatasetReader(DatasetReader):
         # text_field = TextField(tokenized, self._token_indexers)
         # sentence_field = MetadataField(sentence_per_document)
         # word_field = MetadataField(word_per_sentence)
-        label_field = LabelField(label)
+        label_field = LabelField(label, skip_indexing=True)
 
         #fields = {'tokens': text_field, 'sentence_per_document': sentence_field, 'word_per_sentence': word_field, 'label': label_field}
         # fields = {'tokens': text_field, 'label': label_field}
