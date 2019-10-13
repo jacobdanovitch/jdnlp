@@ -9,7 +9,7 @@ import torch.nn as nn
 from allennlp.modules import TimeDistributed, Seq2VecEncoder, Seq2SeqEncoder
 
 from jdnlp.modules.Attention.Attention import Attention
-from jdnlp.utils import compare
+# from jdnlp.utils import compare
 
 from copy import deepcopy
 

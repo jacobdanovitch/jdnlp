@@ -29,8 +29,8 @@ def index_and_split(df_fp, article_fp, test_size=0.15):
     
     return True
     
-    print(__name__)
-    if __name__ == '__main__':
-        import sys
-        print(sys.argv)
-        index_and_split(*sys.argv[1:3])
+
+if __name__ == '__main__':
+    import sys
+    print(sys.argv)
+    index_and_split(*sys.argv[1:3])

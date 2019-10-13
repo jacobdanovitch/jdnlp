@@ -1,0 +1,8 @@
+{
+    "data_path": "tests/fixtures/twtc_sample.csv",
+    "type": "data_splitter",
+    "transform": {
+        "test_size": 0.2,
+        "write_path": "tests/fixtures"
+    }
+}

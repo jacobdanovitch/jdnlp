@@ -51,28 +51,3 @@ def train(cfg):
     #print(json.dumps(params, indent=2))
 
     train_model_from_file(**params)
-
-
-
-
-
-"""
-@hydra.main()
-def main(cfg):
-    # hack to subvert hydra stuff
-    module_path = os.path.dirname(jdnlp.__file__)
-    module_folder = os.path.dirname(module_path)
-    
-    os.chdir(module_folder)
-
-    print(cfg.pretty())
-    for p in _REQUIRED_PARAMS:
-        if not hasattr(cfg, p):
-            raise ConfigurationError(f"Missing required parameter {p}.")
-
-    train(cfg)
-
-
-if __name__ == "__main__":
-    main()
-"""
