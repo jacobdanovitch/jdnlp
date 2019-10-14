@@ -20,27 +20,39 @@ logger = logging.getLogger(__file__)
 
 logging.basicConfig(level=logging.NOTSET)
 
+def textacy_doc(doc):
+    return textacy.make_spacy_doc(doc, lang="en_core_web_sm")
+
 @DataTransform.register("data_augmenter")
 class DataAugmenter(DataTransform):
     def __init__(self, df: pd.DataFrame, tf_args: Dict[str, any]):
         super().__init__(df, tf_args)
+        self.augmenter = DataAugmenter.build_augmenter(self.tf_args.pop('augments'))
+    
+    def augment_document(self, doc):
+        try:
+            doc = textacy.make_spacy_doc(doc, lang="en_core_web_sm")
+            doc = self.augmenter.apply_transforms(doc)
+            return str(doc)
+        except:
+            return doc
     
     @overrides
     def _transform(self, 
         df: pd.DataFrame, 
-        augments: Dict[str, Dict[str, any]],
+        # augments: Dict[str, Dict[str, any]],
         text_col: Union[str, int] = 0,
         processes: int = 8,
         seed: int = 0
     ) -> pd.DataFrame:
-        augmenter = DataAugmenter.build_augmenter(augments)
+        
         original = df.copy()
 
         docs = df[text_col]
-        docs = tqdm_parallel(textacy.make_spacy_doc, docs, processes)
-        docs = tqdm_parallel(augmenter.apply_transforms, docs, processes)
+        docs = list(tqdm_parallel(self.augment_document, docs, processes))
 
-        df[text_col] = list(docs)
+        # df[text_col] = list(docs)
+        df[text_col] = docs
         df = pd.concat([original, df])
 
         logger.info(f'Original length: {len(original)}')

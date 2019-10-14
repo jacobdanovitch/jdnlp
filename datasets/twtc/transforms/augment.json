@@ -1,0 +1,29 @@
+{
+    "data": {
+        "path": "datasets/twtc/train.csv",
+        "header": null
+    },
+    "type": "data_augmenter",
+    "transform": {
+        "processes": 16,
+        "augments": {
+            "prob": null,
+            "substitute_word_synonyms": {
+                "num": 4,
+                "pos": "NOUN"
+            },
+            "delete_words": {
+                "num": 4,
+                "pos": "ADJ"
+            }
+        }
+    },
+    "write_config": [
+        {
+            "path": "datasets/twtc/train.csv",
+            "index": false,
+            "header": null
+        }
+    ]
+
+}

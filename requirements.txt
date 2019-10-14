@@ -1,3 +1,4 @@
-hydra
+nltk
 textacy
 allennlp
+neptune-client

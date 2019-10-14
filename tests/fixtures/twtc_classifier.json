@@ -35,7 +35,7 @@
             "hidden_dims": [
                 25,
                 25,
-                1
+                2
             ],
             "activations": [
                 "sigmoid",
@@ -49,13 +49,34 @@
         "batch_size" : 2
     },
     "trainer": {
-        "num_epochs": 1,
+        "type": "callback",
+        "num_epochs": 3,
         "cuda_device": -1,
-        "grad_clipping": 5,
-        "validation_metric": "+accuracy",
         "optimizer": {
             "type": "sgd",
             "lr": 1.0
-        }
+        },
+        "callbacks": [
+            {
+                "type": "track_metrics",
+                "validation_metric": "+accuracy"
+            },
+            {
+                "type": "checkpoint",
+                "serialization_dir": "saved/twtc/attention/HAN"
+            },
+            {
+                "type": "neptune",
+                "project": "jacobdanovitch/Trouble-with-the-Curve",
+                "experiment_args": {
+                    "name": "twtc-test",
+                    // tags: [""],
+                    // properties: {},
+                },
+                "artifacts": [
+                    "saved/twtc/attention/HAN/config.json"
+                ]
+            }
+        ]
     }
 }

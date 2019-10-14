@@ -5,7 +5,7 @@
             "token_embedders": {
                 "tokens": {
                     "type": "embedding",
-                    "embedding_dim": 300,
+                    "embedding_dim": 100,
                     "trainable": true
                 }
             }
@@ -13,22 +13,25 @@
         "encoder": {
             "type": "HierarchicalAttention",
             "word_encoder": {
-                "type": "intra_sentence_attention",
-                "input_dim": 300,
-                "output_dim": 300
+                //"type": "intra_sentence_attention",
+                //"input_dim": 100,
+                //"output_dim": 100
+                "type": "gru",
+                "input_size": 100,
+                "hidden_size": 100
             },
             "sent_encoder": {
-                "type": "intra_sentence_attention",
-                "input_dim": 300,
-                "output_dim": 300
+                "type": "gru",
+                "input_size": 100,
+                "hidden_size": 100
             }
         },
         "classifier_feedforward": {
-            "input_dim": 300,
+            "input_dim": 100,
             "num_layers": 3,
             "hidden_dims": [
-                300,
-                300,
+                100,
+                100,
                 2
             ],
             "activations": [
@@ -41,13 +44,6 @@
                 0.0,
                 0
             ]
-        }
-    },
-    "trainer": {
-        "grad_clipping": null,
-        "validation_metric": "+accuracy",
-        "optimizer": {
-            "type": "adam"
         }
     }
 }

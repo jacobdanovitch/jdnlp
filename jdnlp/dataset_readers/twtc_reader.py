@@ -64,21 +64,12 @@ class TWTCDatasetReader(DatasetReader):
     @overrides
     def text_to_instance(self, document: str, label: str) -> Instance:
         tokenized: List[str] = self._tokenizer.tokenize(document)
-
-        # sentence_per_document: int = len(documents)
-        # word_per_sentence: List[int] = list([len(self._tokenizer.tokenize(doc)) for doc in documents])
         
         sentences: List[str] = self._sentence_splitter.split_sentences(document)
         tokenized_sents: List[int] = (self._tokenizer.tokenize(sent) for sent in sentences)
 
         sent_fields = ListField([TextField(s, self._token_indexers) for s in tokenized_sents])
+        label_field = LabelField(int(label), skip_indexing=True)
 
-        # text_field = TextField(tokenized, self._token_indexers)
-        # sentence_field = MetadataField(sentence_per_document)
-        # word_field = MetadataField(word_per_sentence)
-        label_field = LabelField(label, skip_indexing=True)
-
-        #fields = {'tokens': text_field, 'sentence_per_document': sentence_field, 'word_per_sentence': word_field, 'label': label_field}
-        # fields = {'tokens': text_field, 'label': label_field}
         fields = {'tokens': sent_fields, 'label': label_field}
         return Instance(fields)

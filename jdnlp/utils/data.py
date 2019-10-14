@@ -34,10 +34,10 @@ def triplet_sample_iterator(df: pd.DataFrame, random_state: np.random.RandomStat
         A tuple containing (anchor, positive, negative).
     """    
 
-   neg_sample = lambda: random_state.randint(0, max_idx+1)
-   for (anchor, positive) in df.loc[:, df.columns[:3]].values.tolist():
-       negative = neg_sample()
-       while positive == negative:
-           negative = neg_sample()
-       
-       yield anchor, positive, negative
+    neg_sample = lambda: random_state.randint(0, max_idx+1)
+    for (anchor, positive) in df.loc[:, df.columns[:3]].values.tolist():
+        negative = neg_sample()
+        while positive == negative:
+            negative = neg_sample()
+        
+        yield anchor, positive, negative
