@@ -1,0 +1,18 @@
+{
+    "data": {
+        "path": "datasets/twtc/labelled.csv",
+        "usecols": ["report", "label"]
+    },
+    "type": "data_entity_masker",
+    "transform": {
+        "processes": 4,
+        "text_col": "report"
+    },
+    "write_config": [
+        {
+            "path": "datasets/twtc/preprocessed.csv",
+            "index": false,
+            "header": null
+        }
+    ]
+}

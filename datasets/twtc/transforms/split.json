@@ -1,7 +1,8 @@
 {
     "data": {
-        "path": "datasets/twtc/labelled.csv",
-        "usecols": ["report", "label"]
+        "path": "datasets/twtc/preprocessed.csv",
+        "index": false,
+        "header": null
     },
     "type": "data_splitter",
     "transform": {
