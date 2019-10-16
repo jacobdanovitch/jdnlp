@@ -1,0 +1,36 @@
+{
+    "model": {
+        // "type": "basic_classifier",
+        // /*
+        "type": "classifier_with_metrics",
+        "metrics": {
+            "categorical_accuracy": {},
+            "f1": {
+                "positive_label": 1
+            }
+        },
+        // */
+        "text_field_embedder": {
+            "token_embedders": {
+                "tokens": {
+                    "type": "embedding",
+                    "embedding_dim": 100
+                }
+            }
+        },
+        "seq2vec_encoder": {
+            "type": "attention_cnn",
+            "embedding_dim": 100,
+            "num_filters": 50,
+            "output_dim": 100,
+            "sequence_length":1024
+            /*
+            "ngram_filter_sizes": [
+                1,
+                2,
+                3,
+                4
+            ]*/
+        }
+    }
+}

@@ -6,11 +6,11 @@
     "type": "data_resampler",
     "transform": {
         "minority_class": 1,
-        "sample_pct": 1
+        "sample_pct": 0.5
     },
     "write_config": [
         {
-            "path": "datasets/twtc/train_resampled.csv",
+            "path": "datasets/twtc/train.csv",
             "index": false,
             "header": null
         }

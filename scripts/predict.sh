@@ -1,1 +1,1 @@
-allennlp predict "saved/$1/$2/model.tar.gz" "datasets/$1/test.csv"  --include-package jdnlp
+allennlp predict "saved/$1/$2/model.tar.gz" "datasets/$1/json/test.json" --include-package jdnlp --cuda-device 0 --predictor text_classifier --silent --output-file "saved/$1/$2/test_predictions.json"

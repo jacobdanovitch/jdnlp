@@ -5,7 +5,7 @@
     },
     "type": "data_entity_masker",
     "transform": {
-        "processes": 4,
+        "processes": 16,
         "text_col": "report"
     },
     "write_config": [

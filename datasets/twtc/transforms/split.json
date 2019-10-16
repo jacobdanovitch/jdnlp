@@ -1,12 +1,11 @@
 {
     "data": {
         "path": "datasets/twtc/preprocessed.csv",
-        "index": false,
         "header": null
     },
     "type": "data_splitter",
     "transform": {
-        "test_size": 0.2
+        "test_size": 0.1
     },
     "write_config": [
         {

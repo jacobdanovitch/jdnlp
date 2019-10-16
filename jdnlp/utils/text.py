@@ -1,6 +1,7 @@
 from typing import List, Tuple
 
 import re
+import pandas as pd
 
 # https://gist.github.com/carlsmith/b2e6ba538ca6f58689b4c18f46fef11c
 def multi_replace(string, substitutions):
@@ -24,3 +25,7 @@ def unpack_text_dataset(data: List[Tuple[str, any]]):
         #    ys = ys[0]
     
     return docs, ys
+
+
+def csv_to_jsonlines(fname):
+    pd.read_csv(fname, names=['text', 'label']).to_json(fname.replace(".csv", ".json"), orient="records", lines=True)
