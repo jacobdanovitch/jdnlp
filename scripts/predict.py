@@ -10,7 +10,7 @@ from sklearn.metrics import classification_report
 exp = sys.argv[1]
 model = sys.argv[2]
 
-input_file = f"datasets/{exp}/json/test.json"
+input_file = f"datasets/{exp}/json/predict.json"
 output_file = f"saved/{exp}/{model}/test_predictions.json"
 
 sys.argv = [

@@ -2,6 +2,8 @@
 Originally from:
 https://github.com/handsomezebra/nlp/blob/master/my_library/models/sequence_classification.py
 https://github.com/handsomezebra/nlp/blob/master/my_library/models/self_attentive_lstm.py
+
+Works like a charm OOTB.
 """
 
 from typing import Dict, Optional, List
@@ -35,7 +37,7 @@ class SequenceClassification(Model):
                  seq2seq_encoder: Seq2SeqEncoder,
                  classifier_feedforward: FeedForward,
                  initializer: InitializerApplicator = InitializerApplicator(),
-                 # loss_weights: Optional[List] = [],
+                 loss_weights: Optional[List] = [],
                  regularizer: Optional[RegularizerApplicator] = None) -> None:
         super(SequenceClassification, self).__init__(vocab, regularizer)
 
@@ -51,8 +53,8 @@ class SequenceClassification(Model):
                 "f1": F1Measure(positive_label=1)
         }
 
-        # self.loss = torch.nn.CrossEntropyLoss(weight=torch.tensor(loss_weights))
-        self.loss = torch.nn.CrossEntropyLoss()
+        self.loss = torch.nn.CrossEntropyLoss(weight=torch.tensor(loss_weights))
+        # self.loss = torch.nn.CrossEntropyLoss()
 
         initializer(self)
 
@@ -84,10 +86,30 @@ class SequenceClassification(Model):
 
         return output_dict
 
+    @overrides
+    def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        """
+        Does a simple argmax over the class probabilities, converts indices to string labels, and
+        adds a ``"label"`` key to the dictionary with the result.
+        """
+
+        predictions = output_dict["class_probabilities"].cpu().data.numpy()
+        argmax_indices = numpy.argmax(predictions, axis=-1)
+        labels = [self.vocab.get_token_from_index(x, namespace="labels")
+                  for x in argmax_indices]
+        output_dict['label'] = labels
+        return output_dict
+
 
     @overrides
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        return {metric_name: metric.get_metric(reset) for metric_name, metric in self.metrics.items()}
+        def unwrap(metric):
+            m = metric.get_metric(reset)
+            if isinstance(m, tuple):
+                return m[-1]
+            return m
+        
+        return {metric_name: unwrap(metric) for metric_name, metric in self.metrics.items()}
 
 
 
