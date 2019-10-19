@@ -23,12 +23,14 @@ class DataEntityMasker(DataTransform):
     def _transform(self, 
         df: pd.DataFrame, 
         text_col: Union[str, int] = 0,
+        new_col: Union[str, int] = None,
         processes: int = 8
     ) -> pd.DataFrame:
         docs = df[text_col]
         docs = tqdm_parallel(DataEntityMasker.mask_text, docs, processes)
         
-        df[text_col] = list(docs)
+        new_col = new_col or text_col
+        df[new_col] = list(docs)
         return df
         
 

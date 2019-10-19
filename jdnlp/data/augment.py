@@ -20,9 +20,6 @@ logger = logging.getLogger(__file__)
 
 logging.basicConfig(level=logging.NOTSET)
 
-def textacy_doc(doc):
-    return textacy.make_spacy_doc(doc, lang="en_core_web_sm")
-
 @DataTransform.register("data_augmenter")
 class DataAugmenter(DataTransform):
     def __init__(self, df: pd.DataFrame, tf_args: Dict[str, any]):
@@ -35,7 +32,7 @@ class DataAugmenter(DataTransform):
             doc = self.augmenter.apply_transforms(doc)
             return str(doc)
         except:
-            return doc
+            return str(doc)
     
     @overrides
     def _transform(self, 

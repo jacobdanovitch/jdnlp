@@ -6,14 +6,14 @@
                 "tokens": {
                     // "pretrained_file": "https://allennlp.s3.amazonaws.com/datasets/glove/glove.840B.300d.txt.gz",
                     "type": "embedding",
-                    "embedding_dim": 100,
+                    "embedding_dim": 300,
                     "trainable": true
                 }
             }
         },
         "embedding_dropout": 0.25,
         "pre_encode_feedforward": {
-            "input_dim": 100,
+            "input_dim": 300,
             "num_layers": 1,
             "hidden_dims": [
                 300

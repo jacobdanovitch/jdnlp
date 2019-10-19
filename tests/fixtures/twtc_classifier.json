@@ -2,7 +2,7 @@
     "dataset_reader": {
         "type": "twtc_reader"
     },
-    "train_data_path": "datasets/twtc/test.csv",
+    "train_data_path": "tests/fixtures/twtc_sample.csv",
     "validation_data_path": "tests/fixtures/twtc_sample.csv",
     "model": {
         "type": "HAN",
@@ -24,9 +24,10 @@
                 "num_layers": 1
             },
             "sent_encoder": {
-                "type": "intra_sentence_attention",
-                "input_dim": 25,
-                "output_dim": 25
+                "type": "gru",
+                "input_size": 25,
+                "hidden_size": 25,
+                "num_layers": 1
             }
         },
         "classifier_feedforward": {
@@ -38,8 +39,8 @@
                 2
             ],
             "activations": [
-                "sigmoid",
-                "sigmoid",
+                "linear",
+                "linear",
                 "linear"
             ]
         }
@@ -49,34 +50,11 @@
         "batch_size" : 2
     },
     "trainer": {
-        "type": "callback",
-        "num_epochs": 3,
+        "num_epochs": 1,
         "cuda_device": -1,
         "optimizer": {
             "type": "sgd",
-            "lr": 1.0
-        },
-        "callbacks": [
-            {
-                "type": "track_metrics",
-                "validation_metric": "+accuracy"
-            },
-            {
-                "type": "checkpoint",
-                "serialization_dir": "saved/twtc/attention/HAN"
-            },
-            {
-                "type": "neptune",
-                "project": "jacobdanovitch/Trouble-with-the-Curve",
-                "experiment_args": {
-                    "name": "twtc-test",
-                    // tags: [""],
-                    // properties: {},
-                },
-                "artifacts": [
-                    "saved/twtc/attention/HAN/config.json"
-                ]
-            }
-        ]
+            "lr": 0.001
+        }
     }
 }

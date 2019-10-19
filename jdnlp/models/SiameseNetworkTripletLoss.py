@@ -16,20 +16,12 @@ from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn import util, Activation
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure, BooleanAccuracy
 
-from jdnlp.modules.LossFunctions import TripletLoss
+from jdnlp.modules.loss_functions.triplet import TripletLoss
 
 
 @Model.register("siamese_triplet_loss")
 class SiameseNetworkTripletLoss(Model):
     """
-    This ``Model`` performs text classification for an academic paper.  We assume we're given a
-    title and an abstract, and we predict some output label.
-
-    The basic model structure: we'll embed the title and the abstract, and encode each of them with
-    separate Seq2VecEncoders, getting a single vector representing the content of each.  We'll then
-    concatenate those two vectors, and pass the result through a feedforward network, the output of
-    which we'll use as our scores for each label.
-
     Parameters
     ----------
     vocab : ``Vocabulary``, required

@@ -1,4 +1,6 @@
 import argparse
+import warnings
+
 import pandas as pd
 
 from allennlp.commands import Subcommand
@@ -65,6 +67,10 @@ def transform_data(params: Params):
     for df, cfg in zip(dfs, write_config):
         fp = cfg.pop('path')
         write_fn = get_pd_fn_from_path(fp, 'to', module=pd.DataFrame)
-        write_fn(df, fp, **dict(cfg))
+        try:
+            write_fn(df, fp, **dict(cfg))
+        except:
+            warnings.warn("Failed to write using specified config. Saving to CSV.")
+            df.to_csv(fp, index=False)
 
     return dfs

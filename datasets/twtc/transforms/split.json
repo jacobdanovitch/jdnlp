@@ -1,7 +1,6 @@
 {
     "data": {
-        "path": "datasets/twtc/preprocessed.csv",
-        "header": null
+        "path": "datasets/twtc/labelled.csv"
     },
     "type": "data_splitter",
     "transform": {
@@ -9,14 +8,14 @@
     },
     "write_config": [
         {
-            "path": "datasets/twtc/train.csv",
-            "index": false,
-            "header": null
+            "path": "datasets/twtc/train.json",
+            "orient": "records",
+            "lines": true
         },
         {
-            "path": "datasets/twtc/test.csv",
-            "index": false,
-            "header": null
+            "path": "datasets/twtc/test.json",
+            "orient": "records",
+            "lines": true
         }
     ]
 }

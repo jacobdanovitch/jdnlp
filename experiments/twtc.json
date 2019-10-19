@@ -1,59 +1,29 @@
 {
     "dataset_reader": {
-        "type": "text_classification_json"
+        "type": "text_classification_json" // "twtc_reader"
     },
-    "train_data_path": "datasets/twtc/json/train.json",
-    "validation_data_path": "datasets/twtc/json/valid.json",
-    "test_data_path": "datasets/twtc/json/test.json",
-    //"train_data_path": "datasets/twtc/json/valid.json",
+    "train_data_path": "datasets/twtc/train.json",
+    // "train_data_path": "datasets/twtc/valid.json",
+    "validation_data_path": "datasets/twtc/valid.json",
+    "test_data_path": "datasets/twtc/test.json",
 
     "evaluate_on_test": true,
     
     "iterator": {
         "type": "basic",
-        "batch_size" : 4
+        "batch_size" : 2
     },
 
-    "model.loss_weights": [ 0.5, 1.25 ],
-    "model.text_field_embedder.token_embedders.tokens.trainable": true,
-    //"model.text_field_embedder.token_embedders.tokens.pretrained_file": "(http://nlp.stanford.edu/data/glove.6B.zip)#glove.6B.100d.txt",
+    // "model.loss_weights": [ 0.5, 1.25 ],
+    // "model.text_field_embedder.token_embedders.tokens.pretrained_file": "(http://nlp.stanford.edu/data/glove.6B.zip)#glove.6B.100d.txt",
     "model.text_field_embedder.token_embedders.tokens.pretrained_file": "https://allennlp.s3.amazonaws.com/datasets/glove/glove.840B.300d.txt.gz",
 
     "trainer": {
-        //"type": "callback",
         "num_epochs": 5,
         "cuda_device": 0,
         "optimizer": {
             "type": "adam",
             "lr": 0.001
-        },
-        //"validation_metric": "+f1"
-        /*
-        "callbacks": [
-            {
-                "type": "validate"
-            },
-            {
-                "type": "track_metrics",
-                //"validation_metric": "+f1"
-            },
-            {
-                "type": "checkpoint",
-                "serialization_dir": "saved/twtc/bcn"
-            },
-            {
-                "type": "neptune",
-                "project": "jacobdanovitch/Trouble-with-the-Curve",
-                "experiment_args": {
-                    "name": "twtc"
-                },
-                "artifacts": [
-                    // "saved/twtc/attention/HAN/config.json"
-                    "jdnlp/model_configs/attention/bcn.json",
-                    "experiments/twtc.json"
-                ]
-            }
-        ]
-        */
+        }
     }
 }

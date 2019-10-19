@@ -10,7 +10,6 @@ from allennlp.data.fields import LabelField, TextField, ArrayField, ListField, M
 from allennlp.data.instance import Instance
 from allennlp.data.tokenizers import Tokenizer, WordTokenizer
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
-# from allennlp.data.tokenizers import WordTokenizer as SpacySentenceSplitter #TODO: DELETE
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 
 import pandas as pd
@@ -54,8 +53,10 @@ class TWTCDatasetReader(DatasetReader):
 
     @overrides
     def _read(self, file_path):
-        data = iter(pd.read_csv(cached_path(file_path), header=None).values)
+        file_path = cached_path(file_path)
+        df = pd.read_json(file_path, lines=True, orient='records')[['text', 'label']].values
         for text, label in data:
+            assert isinstance(label, int)
             inst = self.text_to_instance(text, str(label))
             # if len(vars(inst.fields["tokens"])['tokens']) > 1:
             #    yield inst
@@ -63,8 +64,10 @@ class TWTCDatasetReader(DatasetReader):
 
     @overrides
     def text_to_instance(self, document: str, label: str) -> Instance:
-        tokenized: List[str] = self._tokenizer.tokenize(document)
-        
+        # tokenized: List[str] = self._tokenizer.tokenize(document)
+        if isinstance(document, int):
+            logger.warn("HERE!!!")
+            logger.warn(document)
         sentences: List[str] = self._sentence_splitter.split_sentences(document)
         tokenized_sents: List[int] = (self._tokenizer.tokenize(sent) for sent in sentences)
 

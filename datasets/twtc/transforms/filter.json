@@ -1,0 +1,19 @@
+{
+    "data": {
+        "path": "datasets/twtc/preprocessed.csv",
+        "usecols": [
+            "text", 
+            "label"
+        ]
+    },
+    "type": "data_filter",
+    "transform": {
+        "query": "label != -1"
+    },
+    "write_config": [
+        {
+            "path": "datasets/twtc/labelled.csv",
+            "index": false
+        }
+    ]
+}

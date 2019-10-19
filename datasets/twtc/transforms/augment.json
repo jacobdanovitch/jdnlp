@@ -1,11 +1,12 @@
 {
     "data": {
-        "path": "datasets/twtc/train.csv",
-        "header": null
+        "path": "datasets/twtc/train.json",
+        "lines": true
     },
     "type": "data_augmenter",
     "transform": {
-        "processes": 16,
+        "processes": 32,
+        "text_col": "text",
         "augments": {
             "prob": null,
             "substitute_word_synonyms": {
@@ -20,9 +21,9 @@
     },
     "write_config": [
         {
-            "path": "datasets/twtc/train.csv",
-            "index": false,
-            "header": null
+            "path": "datasets/twtc/train.json",
+            "orient": "records",
+            "lines": true
         }
     ]
 

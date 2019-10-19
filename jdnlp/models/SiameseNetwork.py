@@ -17,7 +17,7 @@ from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn import util, Activation
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure, BooleanAccuracy
 
-from jdnlp.modules.LossFunctions import ContrastiveLoss
+from jdnlp.modules.loss_functions.contrastive import ContrastiveLoss
 
 logger = logging.getLogger(__name__)
 
