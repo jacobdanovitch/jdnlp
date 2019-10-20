@@ -28,8 +28,8 @@ from jdnlp.modules.mac.mac_cell import MACCell
 import logging
 logger = logging.getLogger(__name__)
 
-@Model.register("remembert")
-class ReMemBERT(Model):
+@Model.register("mac_network")
+class MACNetwork(Model):
     """
     Parameters
     ----------

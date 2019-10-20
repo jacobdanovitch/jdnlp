@@ -13,8 +13,10 @@ local BERT_INPUT_UNIT = {
         "type": "multiturn_reader",
         "use_cache": false
     },
-    "train_data_path": "tests/fixtures/multiturn_sample.json",
-    "validation_data_path": "tests/fixtures/multiturn_sample.json",
+    "train_data_path": "datasets/dialog-safety/train.json",
+    "validation_data_path": "datasets/dialog-safety/valid.json",
+    "test_data_path": "datasets/dialog-safety/test.json",
+
     "model": {
         "type": "mac_network",
         "input_unit": BERT_INPUT_UNIT
@@ -24,8 +26,8 @@ local BERT_INPUT_UNIT = {
         "batch_size" : 2
     },
     "trainer": {
-        "num_epochs": 1,
-        "cuda_device": -1,
+        "num_epochs": 5,
+        "cuda_device": 0,
         "optimizer": {
             "type": "sgd",
             "lr": 0.001
