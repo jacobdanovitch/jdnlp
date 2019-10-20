@@ -11,7 +11,7 @@ local BERT_INPUT_UNIT = {
 {
     "dataset_reader": {
         "type": "multiturn_reader",
-        "use_cache": false
+        "use_cache": true
     },
     "train_data_path": "tests/fixtures/multiturn_sample.json",
     "validation_data_path": "tests/fixtures/multiturn_sample.json",
@@ -27,7 +27,7 @@ local BERT_INPUT_UNIT = {
         "num_epochs": 1,
         "cuda_device": -1,
         "optimizer": {
-            "type": "sgd",
+            "type": "adam",
             "lr": 0.001
         }
     }

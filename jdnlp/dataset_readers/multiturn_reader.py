@@ -46,14 +46,18 @@ class MultiTurnReader(DatasetReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None) -> None:
         super().__init__(lazy)
-        _default_indexer = PretrainedBertIndexer(pretrained_model=bert_model)
-        self._tokenize_fn = (tokenizer and tokenizer.tokenize) or _default_indexer.wordpiece_tokenizer
-        self._token_indexers = token_indexers or {"tokens": _default_indexer}
+        self._default_indexer = PretrainedBertIndexer(pretrained_model=bert_model)
+        self.use_default_indexer = bool(tokenizer)
+        self._tokenizer = tokenizer.tokenize if tokenizer else self.tokenizer
+        self._token_indexers = token_indexers or {"tokens": self._default_indexer}
         
         self.max_turns = max_turns
         self.use_cache = use_cache
         if self.use_cache:
             self.cache_data(os.path.expanduser('~/.allennlp/cache/datasets'))
+
+    def tokenizer(self, s: str):
+        return self._default_indexer.wordpiece_tokenizer(s)
 
 
     @overrides
@@ -67,7 +71,7 @@ class MultiTurnReader(DatasetReader):
     @overrides
     def text_to_instance(self, conversation: str, label: str) -> Instance:
         turns: List[str] = conversation.split('\n')[:self.max_turns]
-        tokenized_turns: List[List[str]] = ([Token(w) for w in self._tokenize_fn(turn)] for turn in turns)
+        tokenized_turns: List[List[str]] = ([Token(w) for w in self._tokenizer(turn)] for turn in turns)
         fields = {'tokens': ListField([TextField(s, self._token_indexers) for s in tokenized_turns])}
         # logger.warn('HERE')
         if label:

@@ -11,7 +11,7 @@ local BERT_INPUT_UNIT = {
 {
     "dataset_reader": {
         "type": "multiturn_reader",
-        "use_cache": false
+        "use_cache": true
     },
     "train_data_path": "datasets/dialog-safety/train.json",
     "validation_data_path": "datasets/dialog-safety/valid.json",
@@ -29,7 +29,7 @@ local BERT_INPUT_UNIT = {
         "num_epochs": 5,
         "cuda_device": 0,
         "optimizer": {
-            "type": "sgd",
+            "type": "adam",
             "lr": 0.001
         }
     }
