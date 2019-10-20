@@ -28,7 +28,6 @@ from allennlp.nn.util import masked_softmax, weighted_sum
 
 from torch.nn import Dropout, Linear
 
-
 @Model.register("sequence_classification")
 class SequenceClassification(Model):
     def __init__(self, vocab: Vocabulary,
@@ -76,7 +75,11 @@ class SequenceClassification(Model):
         logits = self.classifier_feedforward(encoding_result)
         class_probabilities = F.softmax(logits, dim=-1)
 
-        output_dict = {'logits': logits, 'class_probabilities': class_probabilities}
+        output_dict = {
+            'logits': logits, 
+            'class_probabilities': class_probabilities,
+            'attention_weights': self_weights,
+        }
 
         if label is not None:
             loss = self.loss(logits, label)

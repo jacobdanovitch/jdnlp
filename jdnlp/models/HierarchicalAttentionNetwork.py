@@ -60,7 +60,7 @@ class HierarchialAttentionNetwork(Model):
             hidden_dims = [
                 hidden_size,
                 hidden_size,
-                num_classes
+                self.num_classes
             ],
             activations = [
                 Activation.by_name("relu")(),
