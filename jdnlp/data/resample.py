@@ -48,7 +48,7 @@ class DataResampler(DataTransform):
         else:
             df_majority_downsampled = resample(df_majority, 
                                             replace=False,
-                                            n_samples=int(len(df_majority)*(1+sample_pct)), 
+                                            n_samples=int(len(df_majority)*(1-sample_pct)), 
                                             random_state=seed)
             df_resampled = pd.concat([df_minority, df_majority_downsampled])
         

@@ -1,0 +1,20 @@
+{
+    "data": {
+        "path": "datasets/dialog-safety/train.json",
+        "lines": true
+    },
+    "type": "data_resampler",
+    "transform": {
+        "minority_class": "notok",
+        "sample_pct": 0.5,
+        "label_col": "label",
+        "sample_up": true
+    },
+    "write_config": [
+        {
+            "path": "datasets/dialog-safety/train_resampled.json",
+            "orient": "records",
+            "lines": true
+        }
+    ]
+}

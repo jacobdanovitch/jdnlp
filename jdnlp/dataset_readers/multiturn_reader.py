@@ -9,7 +9,7 @@ from allennlp.data.dataset_readers.dataset_reader import DatasetReader
 from allennlp.data.fields import LabelField, TextField, ListField
 from allennlp.data.instance import Instance
 from allennlp.data.tokenizers import Token, Tokenizer, WordTokenizer
-from allennlp.data.token_indexers import TokenIndexer, PretrainedBertIndexer
+from allennlp.data.token_indexers import TokenIndexer, PretrainedBertIndexer, SingleIdTokenIndexer
 
 import pandas as pd
 import numpy as np
@@ -47,9 +47,13 @@ class MultiTurnReader(DatasetReader):
                  token_indexers: Dict[str, TokenIndexer] = None) -> None:
         super().__init__(lazy)
         self._default_indexer = PretrainedBertIndexer(pretrained_model=bert_model)
-        self.use_default_indexer = bool(tokenizer)
+        
+        self.use_default_indexer = not bool(tokenizer)
+        if self.use_default_indexer:
+            logger.warn(f'Using BERT indexer.')
+        
         self._tokenizer = tokenizer.tokenize if tokenizer else self.tokenizer
-        self._token_indexers = token_indexers or {"tokens": self._default_indexer}
+        self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer() if tokenizer else self._default_indexer}
         
         self.max_turns = max_turns
         self.use_cache = use_cache
@@ -57,6 +61,8 @@ class MultiTurnReader(DatasetReader):
             self.cache_data(os.path.expanduser('~/.allennlp/cache/datasets'))
 
     def tokenizer(self, s: str):
+        logger.warn("here")
+        print("here")
         return self._default_indexer.wordpiece_tokenizer(s)
 
 
@@ -71,7 +77,7 @@ class MultiTurnReader(DatasetReader):
     @overrides
     def text_to_instance(self, conversation: str, label: str) -> Instance:
         turns: List[str] = conversation.split('\n')[:self.max_turns]
-        tokenized_turns: List[List[str]] = ([Token(w) for w in self._tokenizer(turn)] for turn in turns)
+        tokenized_turns: List[List[str]] = ([w for w in self._tokenizer(turn)] for turn in turns)
         fields = {'tokens': ListField([TextField(s, self._token_indexers) for s in tokenized_turns])}
         # logger.warn('HERE')
         if label:

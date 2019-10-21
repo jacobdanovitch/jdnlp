@@ -51,7 +51,8 @@ class MACNetwork(Model):
     def __init__(self, 
                  vocab: Vocabulary,
                  input_unit: Seq2VecEncoder,
-                 bert_model: str ='bert-base-uncased',
+                 text_field_embedder: TextFieldEmbedder = None,
+                 pretrained_model: str ='bert-base-uncased',
                  classifier_feedforward: FeedForward = None,
                  max_step=12,
                  n_memories=3,
@@ -65,6 +66,10 @@ class MACNetwork(Model):
 
         self.num_classes = self.vocab.get_vocab_size("labels")
         
+        self.text_field_embedder = text_field_embedder or BasicTextFieldEmbedder(
+            {'tokens': PretrainedBertEmbedder(pretrained_model, top_layer_only=True)},
+            allow_unmatched_keys=True
+        )
         self.input_unit = input_unit
         self.mac = MACCell(
             input_unit.get_output_dim(),
@@ -132,9 +137,10 @@ class MACNetwork(Model):
         """
         
         word_mask = util.get_text_field_mask(tokens, num_wrapping_dims=1)
-        # turn_mask = util.get_text_field_mask(tokens)
+        turn_mask = util.get_text_field_mask(tokens)
+        e_conv = self.text_field_embedder(tokens)
         
-        context, question, knowledge = self.input_unit(tokens, word_mask)
+        context, question, knowledge = self.input_unit(e_conv, word_mask, turn_mask)
         memory = self.mac(context, question, knowledge)  # tensor of mems
         #logger.warn(f'Memory: {memory.size()}')
 
