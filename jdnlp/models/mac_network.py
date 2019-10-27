@@ -54,17 +54,18 @@ class MACNetwork(Model):
                  text_field_embedder: TextFieldEmbedder = None,
                  pretrained_model: str ='bert-base-uncased',
                  classifier_feedforward: FeedForward = None,
-                 max_step=12,
-                 n_memories=3,
-                 dropout=0.15,
-                 memory_gate=False,
+                 max_step: int = 12,
+                 n_memories: int = 3,
+                 self_attention: bool = False,
+                 memory_gate: bool = False,
+                 dropout: int = 0.15,
                  loss_weights=[1, 1],
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None
                  ) -> None:
         super().__init__(vocab, regularizer)
 
-        self.num_classes = self.vocab.get_vocab_size("labels")
+        self.num_classes = max(self.vocab.get_vocab_size("labels"), 2)
         
         self.text_field_embedder = text_field_embedder or BasicTextFieldEmbedder(
             {'tokens': PretrainedBertEmbedder(pretrained_model, top_layer_only=True)},
@@ -75,29 +76,26 @@ class MACNetwork(Model):
             input_unit.get_output_dim(),
             max_step=max_step,
             n_memories=n_memories,
-            self_attention=False,
+            self_attention=self_attention,
             memory_gate=memory_gate,
             dropout=dropout,
             save_attns=False,
         )
 
         hidden_size = 2 * input_unit.get_output_dim()
+        n_layers = 3
         self.classifier = classifier_feedforward or FeedForward(
             input_dim = hidden_size,
-            num_layers = 3,
-            hidden_dims = [
-                hidden_size,
-                hidden_size,
-                self.num_classes
-            ],
+            num_layers = n_layers,
+            hidden_dims = (n_layers-1) * [hidden_size] + [self.num_classes],
             activations = [
                 Activation.by_name("relu")(),
                 Activation.by_name("relu")(),
                 Activation.by_name("linear")()
             ],
             dropout = [
-                0.2,
-                0.2,
+                0.05,
+                0.05,
                 0.0
             ]
         )
@@ -110,7 +108,6 @@ class MACNetwork(Model):
         weights = torch.FloatTensor(loss_weights)
         self.loss = nn.CrossEntropyLoss(weight=weights)
 
-        self.nn = None
         initializer(self)
 
     @overrides
@@ -136,11 +133,15 @@ class MACNetwork(Model):
             A scalar loss to be optimised.
         """
         
-        word_mask = util.get_text_field_mask(tokens, num_wrapping_dims=1)
-        turn_mask = util.get_text_field_mask(tokens)
-        e_conv = self.text_field_embedder(tokens)
+        if tokens['tokens'].dim() == 4:
+            word_mask = util.get_text_field_mask(tokens, num_wrapping_dims=1)
+            turn_mask = util.get_text_field_mask(tokens)
+            args = (word_mask, turn_mask)
+        else:
+            args = (util.get_text_field_mask(tokens), )
         
-        context, question, knowledge = self.input_unit(e_conv, word_mask, turn_mask)
+        e_conv = self.text_field_embedder(tokens)
+        context, question, knowledge = self.input_unit(e_conv, *args)# , word_mask, turn_mask)
         memory = self.mac(context, question, knowledge)  # tensor of mems
         #logger.warn(f'Memory: {memory.size()}')
 
@@ -149,17 +150,16 @@ class MACNetwork(Model):
 
 
         logits = self.classifier(out)
-        logits = F.log_softmax(logits, dim=-1)
-
+        # logits = F.log_softmax(logits, dim=-1)
 
         output_dict = {
             'logits': logits
         }
         if label is not None:
-            loss = self.loss(logits, label)
+            output_dict["loss"] = self.loss(logits, label)
+            
             for metric in self.metrics.values():
                 metric(logits, label)
-            output_dict["loss"] = loss
 
         return output_dict
 

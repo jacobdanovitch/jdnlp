@@ -40,7 +40,7 @@ class WriteUnit(nn.Module):
 
         if self.memory_gate:
             control = self.control(controls[-1])
-            gate = F.sigmoid(control)
+            gate = torch.sigmoid(control)
             next_mem = gate * prev_mem + (1 - gate) * next_mem
 
         return next_mem

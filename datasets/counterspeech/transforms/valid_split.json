@@ -1,0 +1,22 @@
+{
+    "data": {
+        "path": "datasets/counterspeech/train.json",
+        "lines": true
+    },
+    "type": "data_splitter",
+    "transform": {
+        "test_size": 0.1
+    },
+    "write_config": [
+        {
+            "path": "datasets/counterspeech/train.json",
+            "orient": "records",
+            "lines": true
+        },
+        {
+            "path": "datasets/counterspeech/valid.json",
+            "orient": "records",
+            "lines": true
+        }
+    ]
+}

@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 from overrides import overrides
 
 import torch
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.CRITICAL)
 
 @Seq2VecEncoder.register("input_unit")
-class BertInputUnit(Seq2VecEncoder):
+class InputUnit(Seq2VecEncoder):
     def __init__(self, 
     pooler: Seq2VecEncoder,
     encoder: Seq2SeqEncoder = None
@@ -79,3 +79,75 @@ class BertInputUnit(Seq2VecEncoder):
 
 
 
+@Seq2VecEncoder.register("kb_input_unit")
+class KBInputUnit(Seq2VecEncoder):
+    def __init__(self, 
+    pooler: Seq2VecEncoder,
+    encoder: Seq2SeqEncoder = None,
+    kb_path: str = None,
+    kb_shape: Tuple[int, int] = None,
+    trainable_kb: bool = False,
+    projection_dim: int = None
+    ):
+        super().__init__()
+
+        kb = (torch.load(kb_path) if kb_path else torch.ones(kb_shape)).float()
+        self.knowledge = nn.Parameter(kb, requires_grad=trainable_kb).float()
+        self.projection_dim = projection_dim
+        if projection_dim:
+            self.kb_proj = nn.Linear(self.knowledge.size(0), self.projection_dim)
+        
+        
+        self.encoder = encoder or PassThroughEncoder(pooler.get_input_dim()) 
+        self.pooler = pooler
+        self.output_dim = pooler.get_output_dim()
+        
+    def load_knowledge(self, batch_size):
+        kb = self.knowledge
+        if self.projection_dim:
+            kb = self.kb_proj(kb.t()).t()
+        kb = kb.repeat(batch_size, 1, 1)
+        return kb
+    
+    @overrides
+    def forward(self, text: torch.Tensor, mask: torch.Tensor):
+        """
+        Parameters
+        ----------
+        text : Dict[str, Variable], required
+            Tensor of shape [B, W, D].
+        label : Variable, optional (default = None)
+            A variable representing the label for each instance in the batch.
+
+        Returns
+        -------
+        context:    
+            all words of the text       [BS, W, D]
+        question:   
+            [CLS] of text               [BS, D]
+        knowledge:  
+            static KB                   [BS, D, L]
+        """
+
+        
+        # context = text
+        context =  self.encoder(text, mask=mask)
+        question = self.pooler(context, mask=mask)
+        # question = util.get_final_encoder_states(context, mask)
+        knowledge = self.load_knowledge(context.size(0))
+
+        # logger.warn(f'Context: {context.size()}')
+        # logger.warn(f'Question: {question.size()}')
+        # logger.warn(f'Knowledge: {knowledge.size()}')
+
+        return context, question, knowledge
+
+
+    @overrides
+    def get_input_dim(self) -> int:
+        return self.input_dim
+
+    @overrides
+    def get_output_dim(self) -> int:
+        return self.output_dim
+    
