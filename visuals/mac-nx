@@ -1,0 +1,21 @@
+digraph {
+	graph [size="12,12"]
+	node [align=left fontsize=12 height=0.2 ranksep=0.1 shape=box style=filled]
+	"ControlUnit[control]" -> "Linear[control_question]"
+	"ControlUnit[control]" -> "ReadUnit[read]"
+	"ControlUnit[control]" -> "Linear[attn]"
+	"ControlUnit[control]" -> "WriteUnit[write]"
+	"ControlUnit[control]" -> "Linear[control]"
+	"ReadUnit[read]" -> "WriteUnit[write]"
+	"ReadUnit[read]" -> "Linear[attn]"
+	"ReadUnit[read]" -> "Linear[concat]"
+	"WriteUnit[write]" -> "Linear[attn]"
+	"WriteUnit[write]" -> "Linear[mem]"
+	"WriteUnit[write]" -> "Linear[concat]"
+	"Linear[mem]" -> "ReadUnit[read]"
+	MACCell -> "WriteUnit[write]"
+	MACCell -> "ControlUnit[control]"
+	MACCell -> "Linear[mem]"
+	"Linear[control]" -> "WriteUnit[write]"
+	Linear -> "ControlUnit[control]"
+}

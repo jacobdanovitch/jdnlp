@@ -1,3 +1,4 @@
+# https://github.com/ivegner/Multi-Memory-MAC-Network
 # https://github.com/tohinz/pytorch-mac-network/blob/master/code/mac.py
 # https://github.com/rosinality/mac-network-pytorch/blob/master/model.py
 
@@ -132,8 +133,10 @@ class MACNetwork(Model):
         loss : torch.FloatTensor, optional
             A scalar loss to be optimised.
         """
+        self.saved_inp = tokens
         
-        if tokens['tokens'].dim() == 4:
+        # logger.warn(f"Tokens={tokens['tokens'].dim()}")
+        if tokens['tokens'].dim() >= 3:
             word_mask = util.get_text_field_mask(tokens, num_wrapping_dims=1)
             turn_mask = util.get_text_field_mask(tokens)
             args = (word_mask, turn_mask)
@@ -151,6 +154,8 @@ class MACNetwork(Model):
 
         logits = self.classifier(out)
         # logits = F.log_softmax(logits, dim=-1)
+        
+        self.saved_y = logits
 
         output_dict = {
             'logits': logits

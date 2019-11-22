@@ -41,6 +41,7 @@ class SiameseNetworkTripletLoss(Model):
                  left_encoder: Seq2VecEncoder,
                  right_encoder: Seq2VecEncoder = None,
                  loss_margin: float = 1.0,
+                 return_embeddings: bool = False,
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None) -> None:
         super().__init__(vocab, regularizer)
@@ -49,6 +50,8 @@ class SiameseNetworkTripletLoss(Model):
         
         self.left_encoder = left_encoder
         self.right_encoder = right_encoder or deepcopy(left_encoder)
+        
+        self.return_embeddings = return_embeddings
 
         if text_field_embedder.get_output_dim() != self.left_encoder.get_input_dim():
             raise ConfigurationError("The output dimension of the text_field_embedder must match the "
@@ -60,6 +63,7 @@ class SiameseNetworkTripletLoss(Model):
                 # "accuracy": CategoricalAccuracy(),
                 # "f1": F1Measure(positive_label=1)
         }
+        
         self.loss = TripletLoss(loss_margin)
 
         initializer(self)
@@ -69,6 +73,7 @@ class SiameseNetworkTripletLoss(Model):
                 anchor: Dict[str, torch.LongTensor],
                 positive: Dict[str, torch.Tensor],
                 negative: Dict[str, torch.Tensor],
+                return_embeddings: bool = False,
                 label: torch.LongTensor = None) -> Dict[str, torch.Tensor]:
         """
         Parameters
@@ -106,20 +111,28 @@ class SiameseNetworkTripletLoss(Model):
         v_n = self.right_encoder(neg_embedded, neg_mask)
 
         loss = self.loss(v_a, v_p, v_n)
-        pos_sim = F.cosine_similarity(v_a, v_p)
-        neg_sim = F.cosine_similarity(v_a, v_n)
+        # pos_sim = F.cosine_similarity(v_a, v_p)
+        # neg_sim = F.cosine_similarity(v_a, v_n)
 
         output_dict = {
             'loss': loss,
-            'pos_similarity': pos_sim,
-            'neg_similarity': neg_sim,
+            # 'pos_similarity': pos_sim,
+            # 'neg_similarity': neg_sim,
         }
+        
+        if self.return_embeddings:
+            output_dict.update({
+                'anchor': v_a,
+                'positive': v_p
+            })
 
+        """
         for metric in self.metrics.values():
             pred = torch.tensor(pos_sim > neg_sim).long()
             # print(pred.size())
             # print(pred)
             metric(pred, torch.tensor([1]*pred.size(0)).long())
+        """
 
         return output_dict
 

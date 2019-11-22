@@ -1,0 +1,1 @@
+from jdnlp.predictors.knn_classifier import KNNClassifierPredictor

@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 from jdnlp.modules.mac.units.linear import linear
 
+import torchsnooper
 
 class ControlUnit(nn.Module):
     def __init__(self, dim, max_step):
@@ -20,7 +21,10 @@ class ControlUnit(nn.Module):
         self.attn = linear(dim, 1)
 
         self.dim = dim
+        
+        self.saved_attn = []
 
+    # @torchsnooper.snoop()
     def forward(self, step, context, question, control):
         position_aware = self.position_aware[step](question)
 
@@ -32,6 +36,8 @@ class ControlUnit(nn.Module):
         attn_weight = self.attn(context_prod)
 
         attn = F.softmax(attn_weight, 1)
+        
+        self.saved_attn.append(attn)
 
         next_control = (attn * context).sum(1)
 

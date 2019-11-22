@@ -49,6 +49,8 @@ class MACCell(nn.Module):
         knowledge = img (KB)
         """
         
+        self.saved_inp = [context, question, knowledge]
+        
         batch_size = question.size(0)
 
         control = self.control_0.expand(batch_size, self.dim)
