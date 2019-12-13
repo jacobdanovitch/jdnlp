@@ -17,15 +17,16 @@ from allennlp.data import Vocabulary
 from allennlp.models.model import Model
 from allennlp.modules import FeedForward, Seq2VecEncoder, Seq2SeqEncoder, TextFieldEmbedder, TimeDistributed
 
-from allennlp.modules.token_embedders.bert_token_embedder import PretrainedBertEmbedder
 from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
 
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn import util, Activation
-from allennlp.training.metrics import CategoricalAccuracy, F1Measure
+from allennlp.training.metrics import CategoricalAccuracy, FBetaMeasure, F1Measure, Metric
 
 from jdnlp.modules.mac.mac_cell import MACCell
+from jdnlp.metrics import WeightedF1Measure
 
+import torchsnooper
 import logging
 logger = logging.getLogger(__name__)
 
@@ -52,15 +53,19 @@ class MACNetwork(Model):
     def __init__(self, 
                  vocab: Vocabulary,
                  input_unit: Seq2VecEncoder,
-                 text_field_embedder: TextFieldEmbedder = None,
-                 pretrained_model: str ='bert-base-uncased',
+                 
+                 text_field_embedder: TextFieldEmbedder,
+                 # embedding_projection_dim: int = None,
+                 
                  classifier_feedforward: FeedForward = None,
                  max_step: int = 12,
                  n_memories: int = 3,
                  self_attention: bool = False,
                  memory_gate: bool = False,
                  dropout: int = 0.15,
-                 loss_weights=[1, 1],
+                 
+                 loss_weights=None,
+                 
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None
                  ) -> None:
@@ -68,13 +73,12 @@ class MACNetwork(Model):
 
         self.num_classes = max(self.vocab.get_vocab_size("labels"), 2)
         
-        self.text_field_embedder = text_field_embedder or BasicTextFieldEmbedder(
-            {'tokens': PretrainedBertEmbedder(pretrained_model, top_layer_only=True)},
-            allow_unmatched_keys=True
-        )
+        self.text_field_embedder = text_field_embedder
+        
+        self.proj = nn.Linear(text_field_embedder.get_output_dim(), input_unit.get_input_dim())
         self.input_unit = input_unit
         self.mac = MACCell(
-            input_unit.get_output_dim(),
+            text_field_embedder.get_output_dim(), # input_unit.get_output_dim(),
             max_step=max_step,
             n_memories=n_memories,
             self_attention=self_attention,
@@ -95,26 +99,28 @@ class MACNetwork(Model):
                 Activation.by_name("linear")()
             ],
             dropout = [
-                0.05,
-                0.05,
+                dropout,
+                dropout,
                 0.0
             ]
         )
 
         self.metrics = {
                 "accuracy": CategoricalAccuracy(),
-                "f1": F1Measure(positive_label=1)
+                "f1": F1Measure(positive_label=1),
+                "weighted_f1": WeightedF1Measure(),
+                "fbeta": FBetaMeasure(average='micro')
         }
         
-        weights = torch.FloatTensor(loss_weights)
+        weights = loss_weights and torch.FloatTensor(loss_weights)
         self.loss = nn.CrossEntropyLoss(weight=weights)
 
         initializer(self)
 
-    @overrides
+    # @torchsnooper.snoop(watch=('label', ))# @overrides
     def forward(self,  # type: ignore
                 tokens: Dict[str, torch.LongTensor],
-                label: torch.LongTensor = None
+                label: torch.LongTensor = None,
                 ) -> Dict[str, torch.Tensor]:
         """
         Parameters
@@ -143,17 +149,16 @@ class MACNetwork(Model):
         else:
             args = (util.get_text_field_mask(tokens), )
         
-        e_conv = self.text_field_embedder(tokens)
-        context, question, knowledge = self.input_unit(e_conv, *args)# , word_mask, turn_mask)
-        memory = self.mac(context, question, knowledge)  # tensor of mems
-        #logger.warn(f'Memory: {memory.size()}')
-
+        # For char embedding, must provide wrapping dims.
+        # https://github.com/allenai/allennlp/issues/820
+        e_conv = self.text_field_embedder(tokens, num_wrapping_dims=1)
+        # e_conv = self.proj(e_conv)
+        
+        context, question, knowledge = self.input_unit(e_conv, *args) # , word_mask, turn_mask)
+        memory = self.mac(context, question, knowledge)  # tensor of memories
         out = torch.cat([memory, question], 1)
-        # logger.warn(f'Out: {out.size()}')
-
 
         logits = self.classifier(out)
-        # logits = F.log_softmax(logits, dim=-1)
         
         self.saved_y = logits
 
@@ -173,6 +178,7 @@ class MACNetwork(Model):
         return {
             # f1 get_metric returns (precision, recall, f1)
             "f1": self.metrics["f1"].get_metric(reset=reset)[2],
+            "weighted_f1": self.metrics["weighted_f1"].get_metric(reset=reset),
+            # "fbeta": self.metrics["fbeta"].get_metric(reset=reset)['fscore'],
             "accuracy": self.metrics["accuracy"].get_metric(reset=reset)
         }
-

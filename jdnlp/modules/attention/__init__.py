@@ -1,2 +1,5 @@
 # from jdnlp.modules.attention.hierarchical_attention import HierarchicalAttention
-# from jdnlp.modules.attention.masked_self_attention import MaskedSelfAttention
+from jdnlp.modules.attention.masked_self_attention import MaskedSelfAttention
+from jdnlp.modules.attention.simple_han_attention import SimpleHanAttention
+
+from jdnlp.modules.attention.block_self_attention import BiBloSAN

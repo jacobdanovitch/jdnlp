@@ -1,3 +1,6 @@
+local embedding = import '../common/embeddings.jsonnet';
+local seq2vec = import '../common/seq2vec.jsonnet';
+
 local EMBEDDING_DIM = 300;
 
 local GRU = {
@@ -48,23 +51,17 @@ local FEED_FWD =  {
     ]
 };
 
+local han(encoder) = {
+    "type": "HAN",
+    "text_field_embedder": embedding.basic_embedder(EMBEDDING_DIM, true, 'glove'),
+    "encoder": {
+        "type": "HierarchicalAttention",
+        "word_encoder": seq2vec[encoder](EMBEDDING_DIM),
+        "sent_encoder": seq2vec[encoder](EMBEDDING_DIM)
+    },
+    "classifier_feedforward": FEED_FWD
+};
+
 {
-    "model": {
-        "type": "HAN",
-        "text_field_embedder": {
-            "token_embedders": {
-                "tokens": {
-                    "type": "embedding",
-                    "embedding_dim": EMBEDDING_DIM,
-                    "trainable": true
-                }
-            }
-        },
-        "encoder": {
-            "type": "HierarchicalAttention",
-            "word_encoder": LSTM,
-            "sent_encoder": GRU
-        },
-        "classifier_feedforward": FEED_FWD
-    }
+    model::han
 }

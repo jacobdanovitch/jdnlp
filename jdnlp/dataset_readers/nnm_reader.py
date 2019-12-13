@@ -53,6 +53,7 @@ class NNMDatasetReader(DatasetReader):
                  random_seed: int = 0,
                  lazy: bool = False,
                  tokenizer: Tokenizer = None,
+                 sample: int = None,
                  token_indexers: Dict[str, TokenIndexer] = None) -> None:
         super().__init__(lazy)
         self._tokenizer = tokenizer or WordTokenizer()
@@ -69,6 +70,8 @@ class NNMDatasetReader(DatasetReader):
         article_idx = pd.read_json(article_index_path)
         self.article_idx = dict(article_idx.values)
         self.idx2article = dict(article_idx[reversed(article_idx.columns[:2])].values)
+        
+        self.sample = sample
 
 
     @overrides
@@ -80,7 +83,7 @@ class NNMDatasetReader(DatasetReader):
         c_max, t_max = df[["comment_idx", "text_idx"]].max()
         triples = triplet_sample_iterator(df, self.random_state, t_max)
         # """
-        for triple in triples:
+        for triple in triples[:self.sample]:
             inst = self.text_to_instance(triple)
             if inst:
                 yield inst
@@ -117,7 +120,7 @@ class NNMDatasetReader(DatasetReader):
             fields = {
                 'anchor': anchor,
                 'positive': positive,
-                'negative': negative
+                # 'negative': negative
             }
             return Instance(fields)
 

@@ -1,0 +1,1 @@
+from jdnlp.modules.seq2vec.pooling import PoolingEncoder

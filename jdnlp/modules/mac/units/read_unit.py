@@ -5,6 +5,8 @@ from torch.nn.init import kaiming_uniform_, xavier_uniform_, normal
 import torch.nn.functional as F
 
 from jdnlp.modules.mac.units.linear import linear
+from entmax import sparsemax, entmax15
+
 
 import torchsnooper
 
@@ -17,6 +19,7 @@ class ReadUnit(nn.Module):
         self.concat = linear(dim * 2, dim)
         self.attn = linear(dim, 1)
         
+        
         self.saved_attn = []
 
     # @torchsnooper.snoop()
@@ -25,7 +28,9 @@ class ReadUnit(nn.Module):
         concat = self.concat(torch.cat([mem * know, know], 1).permute(0, 2, 1))
         attn = concat * control[-1].unsqueeze(1)
         attn = self.attn(attn).squeeze(2)
+        
         attn = F.softmax(attn, 1)
+        # attn = sparsemax(attn, 1)
         
         self.saved_attn.append(attn)
         

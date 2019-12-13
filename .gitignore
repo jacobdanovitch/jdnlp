@@ -8,5 +8,7 @@
 .idea/
 saved/
 best/
-datasets/nnm/
-datasets/cmv
+datasets/
+# datasets/nnm/
+# datasets/cmv
+experiments/remembert/

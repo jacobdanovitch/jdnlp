@@ -4,6 +4,8 @@ from torch import nn
 from torch.nn.init import kaiming_uniform_, xavier_uniform_, normal
 import torch.nn.functional as F
 
+from entmax import sparsemax, entmax15
+
 from jdnlp.modules.mac.units.linear import linear
 
 import torchsnooper
@@ -36,6 +38,7 @@ class ControlUnit(nn.Module):
         attn_weight = self.attn(context_prod)
 
         attn = F.softmax(attn_weight, 1)
+        # attn = sparsemax(attn_weight, 1)
         
         self.saved_attn.append(attn)
 

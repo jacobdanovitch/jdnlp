@@ -1,17 +1,20 @@
 #!/bin/bash
-if test -f "experiments/$2.jsonnet"; then
-    export CFG="$(cat experiments/$2.jsonnet)"
-else
-    export CFG="$(cat experiments/$2.json)"
-fi
 
-if test -f "jdnlp/model_configs/$1.jsonnet"; then
-    export MODEL_PATH="jdnlp/model_configs/$1.jsonnet"
-else
-    export MODEL_PATH="jdnlp/model_configs/$1.json"
-fi
+#if test -f "experiments/$2.jsonnet"; then
+    #export CFG="$(cat experiments/$2.jsonnet)"
+#else
+    #export CFG="$(cat experiments/$2.json)"
+#fi
+#
+#if test -f "jdnlp/model_configs/$1.jsonnet"; then
+    #export MODEL_PATH="jdnlp/model_configs/$1.jsonnet"
+#else
+    #export MODEL_PATH="jdnlp/model_configs/$1.json"
+#fi
 
+export MODEL_PATH="experiments/$1.jsonnet"
 
 # echo "python -m allennlp.run train \"jdnlp/model_configs/$1.json\" -f -s \"saved/$2/$1\" --overrides $P_CFG --include-package jdnlp"
 # tensorboard --logdir saved/counterspeech/attention/remembert/log --bind_all
-allennlp train "$MODEL_PATH" -f -s "saved/$2/$1" --overrides "$CFG" --include-package jdnlp
+allennlp train "$MODEL_PATH" -f -s "saved/$1" --include-package jdnlp
+# --overrides "$CFG"

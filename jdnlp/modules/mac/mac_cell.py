@@ -50,31 +50,32 @@ class MACCell(nn.Module):
         """
         
         self.saved_inp = [context, question, knowledge]
+        self.read.saved_attn = []
+        self.control.saved_attn = []
         
         batch_size = question.size(0)
 
         control = self.control_0.expand(batch_size, self.dim)
         memory = self.mem_0.expand(batch_size, self.dim)
 
-        if self.training:
-            control_mask = self.get_mask(control, self.dropout)
-            memory_mask = self.get_mask(memory, self.dropout)
-            control = control * control_mask
-            memory = memory * memory_mask
+        # if self.training:
+        control_mask = self.get_mask(control, self.dropout)
+        memory_mask = self.get_mask(memory, self.dropout)
+        control = control * control_mask
+        memory = memory * memory_mask
 
         controls = [control]
         memories = [memory]
 
         for i in range(self.max_step):
             control = self.control(i, context, question, control)
-            if self.training:
-                control = control * control_mask
+            # if self.training:
+            control = control * control_mask
             controls.append(control)
 
             read = self.read(memories, knowledge, controls)
             memory = self.write(memories, read, controls)
-            if self.training:
-                memory = memory * memory_mask
+            memory = memory * memory_mask
             memories.append(memory)
 
         return memory

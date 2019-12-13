@@ -15,6 +15,8 @@ from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn import util, Activation
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
+from jdnlp.metrics import WeightedF1Measure
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -43,7 +45,7 @@ class HierarchialAttentionNetwork(Model):
                  text_field_embedder: TextFieldEmbedder,
                  encoder: Seq2VecEncoder,
                  classifier_feedforward: FeedForward = None,
-                 loss_weights=[1, 1],
+                 loss_weights=None,
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None) -> None:
         super().__init__(vocab, regularizer)
@@ -81,13 +83,13 @@ class HierarchialAttentionNetwork(Model):
                                                             encoder.get_input_dim()))
         self.metrics = {
                 "accuracy": CategoricalAccuracy(),
-                "f1": F1Measure(positive_label=1)
+                "f1": F1Measure(positive_label=1),
+                "weighted_f1": WeightedF1Measure(),
         }
         
-        weights = torch.FloatTensor(loss_weights)
-        self.loss = nn.CrossEntropyLoss(weight=weights)
+        args = {weight: torch.FloatTensor(loss_weights)} if loss_weights else {}
+        self.loss = nn.CrossEntropyLoss(**args)
 
-        self.nn = None
         initializer(self)
 
     @overrides
@@ -124,7 +126,6 @@ class HierarchialAttentionNetwork(Model):
         
         doc_vecs, sent_attention, word_attention = self.encoder(embedded, word_mask, sentence_mask)
         logits = self.classifier_feedforward(doc_vecs)
-        logits = F.log_softmax(logits, dim=-1)
 
 
         output_dict = {
@@ -145,6 +146,7 @@ class HierarchialAttentionNetwork(Model):
         return {
             # f1 get_metric returns (precision, recall, f1)
             "f1": self.metrics["f1"].get_metric(reset=reset)[2],
+            "weighted_f1": self.metrics["weighted_f1"].get_metric(reset=reset),
             "accuracy": self.metrics["accuracy"].get_metric(reset=reset)
         }
 

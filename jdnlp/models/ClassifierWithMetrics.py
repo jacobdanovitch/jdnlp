@@ -16,10 +16,12 @@ from allennlp.training.metrics.metric import Metric
 
 from allennlp.data import Vocabulary
 from allennlp.models.model import Model
-from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, TextFieldEmbedder
-from allennlp.nn import InitializerApplicator, RegularizerApplicator
+from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, TextFieldEmbedder, FeedForward
+from allennlp.nn import InitializerApplicator, RegularizerApplicator, Activation
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy
+
+import torchsnooper
 
 @Model.register("classifier_with_metrics")
 class ClassifierWithMetrics(Model):
@@ -41,8 +43,6 @@ class ClassifierWithMetrics(Model):
         super().__init__(vocab, regularizer)
         
         self.metrics = {m: Metric.by_name(m)(**kwargs) for (m, kwargs) in metrics.items()}
-        print(metrics.items())
-        print(self.metrics)
         
         self._text_field_embedder = text_field_embedder
 
@@ -53,18 +53,13 @@ class ClassifierWithMetrics(Model):
 
         self._seq2vec_encoder = seq2vec_encoder
         self._classifier_input_dim = self._seq2vec_encoder.get_output_dim()
-
-        if dropout:
-            self._dropout = torch.nn.Dropout(dropout)
-        else:
-            self._dropout = None
+        
+        self.proj = torch.nn.Linear(self._text_field_embedder.get_output_dim(), self._classifier_input_dim)
+        self._dropout = torch.nn.Dropout(dropout) if dropout else None
 
         self._label_namespace = label_namespace
 
-        if num_labels:
-            self._num_labels = num_labels
-        else:
-            self._num_labels = vocab.get_vocab_size(namespace=self._label_namespace)
+        self._num_labels = num_labels if num_labels else vocab.get_vocab_size(namespace=self._label_namespace)
         self._classification_layer = torch.nn.Linear(self._classifier_input_dim, self._num_labels)
         self._accuracy = CategoricalAccuracy()
         
@@ -73,6 +68,7 @@ class ClassifierWithMetrics(Model):
         
         initializer(self)
 
+    # @torchsnooper.snoop()#watch=('encoded.size()', ))
     def forward(  # type: ignore
         self, tokens: Dict[str, torch.LongTensor], label: torch.IntTensor = None
     ) -> Dict[str, torch.Tensor]:
@@ -96,24 +92,24 @@ class ClassifierWithMetrics(Model):
         loss : torch.FloatTensor, optional
             A scalar loss to be optimised.
         """
+        wrapping_dim = tokens['tokens'].dim() - 1
         embedded_text = self._text_field_embedder(tokens)
-        mask = get_text_field_mask(tokens).float()
+        mask = get_text_field_mask(tokens)#,num_wrapping_dims=wrapping_dim)
+        embedded_text = self.proj(embedded_text)
 
         if self._seq2seq_encoder:
             embedded_text = self._seq2seq_encoder(embedded_text, mask=mask)
 
-        embedded_text = self._seq2vec_encoder(embedded_text, mask=mask)
+        encoded = self._seq2vec_encoder(embedded_text, mask=None)#mask)
 
         if self._dropout:
-            embedded_text = self._dropout(embedded_text)
+            encoded = self._dropout(encoded)
 
-        logits = self._classification_layer(embedded_text)
-        probs = torch.nn.functional.softmax(logits, dim=-1)
+        logits = self._classification_layer(encoded)
 
-        output_dict = {"logits": logits, "probs": probs}
-
+        output_dict = {"logits": logits, "probs": torch.nn.functional.softmax(logits, dim=-1)}
         if label is not None:
-            loss = self._loss(logits, label.long().view(-1))
+            loss = self._loss(logits, label)# .long().view(-1))
             output_dict["loss"] = loss
             for metric in self.metrics.values():
                 metric(logits, label)
@@ -143,13 +139,6 @@ class ClassifierWithMetrics(Model):
         return output_dict
     
     
-    """
-    Doesn't work with f1 for some reason.
-    "f1": {
-                "positive_label": 1
-            }
-    Throws ridiculous RuntimeError("You never call this metric before.")
-    """
     @overrides
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         return {name: parse_metric(metric, reset) for (name, metric) in self.metrics.items()}

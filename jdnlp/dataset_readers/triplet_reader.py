@@ -14,6 +14,7 @@ from allennlp.data.tokenizers import Tokenizer, WordTokenizer
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 
 from allennlp.data.tokenizers.token import show_token
+from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 
 
 import pandas as pd
@@ -52,10 +53,14 @@ class TripletDatasetReader(DatasetReader):
                  article_index_path: str, 
                  lazy: bool = False,
                  tokenizer: Tokenizer = None,
+                 max_seq_len: int = 100_000,
+                 sample: int = None,
                  token_indexers: Dict[str, TokenIndexer] = None) -> None:
         super().__init__(lazy)
         self._tokenizer = tokenizer or WordTokenizer()
         self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
+        
+        # self.sent_splitter = SpacySentenceSplitter()
         
         comment_idx = pd.read_json(comment_index_path)
         self.comment_idx = dict(comment_idx.values)
@@ -65,42 +70,46 @@ class TripletDatasetReader(DatasetReader):
         self.article_idx = dict(article_idx.values)
         self.idx2article = dict(article_idx[reversed(article_idx.columns[:2])].values)
         
-        self.cache_data(os.path.expanduser('~/.allennlp/cache/datasets'))
+        self.max_seq_len = max_seq_len
+        self.sample = sample
+        
+        # self.cache_data(os.path.expanduser('~/.allennlp/cache/datasets'))
 
 
     @overrides
     def _read(self, file_path):
-        df = pd.read_csv(cached_path(file_path))
-        df = df.dropna()
+        df = pd.read_csv(file_path).dropna() # cached_path()
+        if self.sample:
+            df = df.sample(self.sample)
         
-        for triple in df.values:
-            inst = self.text_to_instance(triple)
+        for article_idx, comment_idx in df[['text_idx', 'comment_idx']].values:
+            inst = self.text_to_instance(article_idx, comment_idx, label=str(article_idx)) # 
             if inst:
                 yield inst
 
             
 
     def index_to_textfield(self, i, index):
-        text = index[i]
-        if len(text) > 100_000:
-            # return False
-            text = text[:100_000]
-        return TextField(self._tokenizer.tokenize(text), self._token_indexers)
+        text = self._tokenizer.tokenize(index[i][:100_000])[:self.max_seq_len]
+        return TextField(text, self._token_indexers)
 
 
     """
     TODO: Specialized tokenization for Reddit (> quotes) and Twitter (# hashtags)
     """
     @overrides
-    def text_to_instance(self, triple: Tuple[int, int, int], label=None) -> Instance:
-        # logger.info(triple)
-        ordered_indices = [self.idx2article, self.idx2comment, self.idx2comment] # anchor article, positive comment, negative comment
+    def text_to_instance(self, article_idx, comment_idx, label=None) -> Instance: # triple: Tuple[int, int, int]
+        ordered_indices = [self.idx2article, self.idx2comment]# , self.idx2comment] # anchor article, positive comment, negative comment
+        triple = [article_idx, comment_idx]
         
         triple_fields = [self.index_to_textfield(t, idx) for (t, idx) in zip(triple, ordered_indices)]
         if not all(triple_fields):
             return False
         
-        return Instance(dict(zip(['anchor', 'positive', 'negative'], triple_fields)))
+        inst = {**dict(zip(['anchor', 'positive', 'negative'], triple_fields))}
+        if label:
+            inst['label'] = LabelField(str(label))
+        return Instance(inst)
 
 
     def field_tokens(self, inst, field, fmt):

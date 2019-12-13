@@ -1,1 +1,1 @@
-from jdnlp import dataset_readers, data, models, modules, utils, predictors
+from jdnlp import dataset_readers, data, models, modules, utils, predictors, metrics

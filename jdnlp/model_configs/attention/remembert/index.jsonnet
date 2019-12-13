@@ -1,5 +1,5 @@
 {
-    "cnn": import 'cnn.jsonnet',
-    "lstm": import 'lstm.jsonnet',
     "bert": import 'bert.jsonnet',
+    'kb': import 'kb.jsonnet',
+    'encoder': import 'encoder.jsonnet'
 }

@@ -34,9 +34,10 @@ class KNNClassifierPredictor(Predictor):
         """
         Expects JSON that looks like ``{"sentence": "..."}``.
         """
-        x = (json_dict['text_idx'], json_dict['comment_idx'], json_dict['comment_idx'])
-        # print(x)
-        return self._dataset_reader.text_to_instance(x)  # type: ignore
+        if 'text_idx' in json_dict:
+            x = (json_dict['text_idx'], json_dict['comment_idx'])# , json_dict['comment_idx'])
+            return self._dataset_reader.text_to_instance(*x)  # type: ignore
+        return self._dataset_reader.text_to_instance(*json_dict.values())
 
     @overrides
     def predictions_to_labeled_instances(
