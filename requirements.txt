@@ -1,5 +1,8 @@
-nltk # punkt, averaged_perceptron_tagger, maxent_ne_chunker, words, stopwords
+nltk # ['punkt', 'averaged_perceptron_tagger', 'maxent_ne_chunker', 'words', 'stopwords']
 textacy
 allennlp
 neptune-client
 torchsnooper
+convokit
+entmax
+pytorch_metric_learning
