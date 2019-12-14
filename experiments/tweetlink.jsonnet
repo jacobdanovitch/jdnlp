@@ -176,6 +176,6 @@ local boe = {
     */
     
     // "iterator": common.iterators.bucket_iterator(batch_size=8, sorting_keys=[['anchor', 'num_token_characters']], skip_smaller_batches=true),
-    "iterator": common.iterators.base_iterator(batch_size=32),
-    "trainer": common.trainer('adam', lr=0.001, num_epochs=8, cuda_device=[0, 1, 2, 3],) //patience=5
+    "iterator": common.iterators.base_iterator(batch_size=64),
+    "trainer": common.trainer('adam', lr=0.0005, num_epochs=8, cuda_device=[0, 1, 2, 3],) //patience=5
 }

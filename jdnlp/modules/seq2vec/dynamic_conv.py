@@ -12,7 +12,7 @@ import math
 from overrides import overrides
 from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, TimeDistributed
 
-from fairseq.modules.dynamic_convolution import DynamicConv1dTBC
+# from fairseq.modules.dynamic_convolution import DynamicConv1dTBC
 
 import torchsnooper
 import logging
@@ -88,7 +88,7 @@ class DCNN(Seq2SeqEncoder):
         self.input_dim = input_dim
         self.output_dim = input_dim
         
-        """
+        # """
         self.cells = nn.Sequential(*(DCNNCell(**c_params) for c_params in cells))
         
         num_averages = sum([c['folding_stride'][-1] for c in cells if c.get('cell_number') == -1])
@@ -99,14 +99,14 @@ class DCNN(Seq2SeqEncoder):
             
         self.dropout = nn.Dropout(dropout_rate)
         self.fc = nn.Linear(self.fc_layer_input, output_dim)
-        """
-        self.dcn = DynamicConv1dTBC(input_dim)
-    
-    @overrides
-    def forward(self, embedded, *args, **kwargs):
+        # """
+        #self.dcn = DynamicConv1dTBC(input_dim)
+
+    def _forward(self, embedded, *args, **kwargs):
         return self.dcn(embedded.permute(1,0,2).contiguous(), unfold=True).permute(1, 0, 2).contiguous()
     
-    def _forward(self, embedded, *args, **kwargs): # [batch_size, sent_length, embedding_dim]
+    @overrides
+    def forward(self, embedded, *args, **kwargs): # [batch_size, sent_length, embedding_dim]
         embedded = embedded.unsqueeze(1)
         # [batch_size, 1(initial_input_channel), sent_length, embedding_dim]
         out = self.cells(embedded)

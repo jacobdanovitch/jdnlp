@@ -146,15 +146,10 @@ class SelfAttentionNarrow(nn.Module):
         if self.mask: # mask out the upper half of the dot matrix, excluding the diagonal
             mask_(dot, maskval=float('-inf'), mask_diagonal=False)
 
-<<<<<<< HEAD
-        dot = F.softmax(dot, dim=-1)
-        # dot = sparsemax(dot, dim=-1)
-=======
         # dot = F.softmax(dot, dim=-1)
         # dot = sparsemax(dot, dim=-1)
         dot = entmax_bisect(dot, alpha=self.alpha, dim=-1)
 
->>>>>>> 6b64d634c7e8f7808e1e2fa63075d7a98148fef7
         # - dot now has row-wise self-attention probabilities
 
         # apply the self attention to the values
