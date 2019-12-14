@@ -8,6 +8,8 @@ def get_df_from_file(fp: str, **kwargs):
 
 def get_pd_fn_from_path(fp: str, fn: str, module=pd):
     ftype = fp.split('.')[-1]
+    if ftype == 'jsonl':
+        ftype = 'json'
     fn_name = f'{fn}_{ftype}'
 
     if hasattr(module, fn_name):

@@ -9,9 +9,9 @@ local embedding_dim = 300; // 100
 
 local base_model(enc) = {
     "type": "siamese_triplet_loss",
-    // "text_field_embedder": embeddings.char_embedder(embedding_dim, tokens=false),
-    "text_field_embedder": embeddings.basic_embedder(embedding_dim),//, pretrained='glove'),
-    //"text_field_embedder": embeddings.elmo_embedder(dim=embedding_dim, requires_grad=true),
+    //"text_field_embedder": embeddings.char_embedder(embedding_dim, tokens=false),
+    "text_field_embedder": embeddings.basic_embedder(embedding_dim, pretrained='glove'),
+    //"text_field_embedder": embeddings.basic_embedder(embedding_dim),
     "encoder": enc,
     "loss_margin": 0.15
 };
@@ -99,6 +99,34 @@ local biblosa = base_model({
     "expected_max_length": 100
 });
 
+local dcn = {
+    "type": "dynamic_conv",
+    "input_dim": embedding_dim,
+    "output_dim": embedding_dim,
+    "cells": [
+        {'cell_number': 1,
+            'sent_length': 7,
+            'conv_kernel_size': [3, 1],
+            'conv_input_channels': 1,
+            'conv_output_channels': 1,
+            'conv_stride': [1, 1],
+            'k_max_number': 100,
+            'folding_kernel_size': [1, 2],
+            'folding_stride': [1, 1]
+        },
+        {'cell_number': -1,
+            'sent_length': 7,
+            'conv_kernel_size': [3, 1],
+            'conv_input_channels': 1,
+            'conv_output_channels': 2,
+            'conv_stride': [1, 1],
+            'k_max_number': 100,
+            'folding_kernel_size': [1, 2],
+            'folding_stride': [1, 1]
+        }
+    ]
+};
+
 local boe = {
     "type": "siamese_triplet_loss",
     "text_field_embedder": embeddings.basic_embedder(100, false, pretrained='glove'),
@@ -107,39 +135,47 @@ local boe = {
 
 {
     "dataset_reader": {
-        "type": "tweetlink_reader", //"nnm_reader",
-        // /*
+        "type": "tweetlink_reader",
         "token_indexers": {
-            // /* 
             "tokens": {
                 "type": "single_id",
                 "lowercase_tokens": true
-                },
-            // */
-            /*
-            "token_characters": {
-                "type": "characters"
-            }
-            */
-            /*
-            "elmo": {
-                "type": "elmo_characters"
-            }
-            */
+                }
         },
-        // */
-        "sample": 2000,
+        "sample": 2000, //20000,
     },
-    "train_data_path": "datasets/tweet-linking/tweetlinking.jsonl",
-    //"train_data_path": "datasets/reddit-linking/titleonly_100k.jsonl",
+
+    "train_data_path": "datasets/reddit-linking/train.jsonl",
+
+    // "train_data_path": "datasets/tweet-linking/train.jsonl",
+    // "validation_data_path": "datasets/tweet-linking/valid.jsonl",
+
+    // "train_data_path": "datasets/reddit-linking/titleonly_100k.jsonl",
     
-    "model": sparse_transformer,
-    // "model": base_model(seq2vec.bigru(embedding_dim)), //
+    //"model": sparse_transformer,
+    "model": base_model(seq2vec.bigru(embedding_dim)), //
     // "model": base_model(seq2vec.cnn(embedding_dim)),
     // "model": adaptive_transformer,
     // "model": pretrained_adaptive_transformer,
+    /*
+    "model": pooling_model({
+        "type": "simple_han_attention",
+        "input_dim": embedding_dim,
+        //"n_heads": 6
+    }),
+    */ // star_tf: 1L, 1H, DO=0.1 worked ok
+    /*
+    "model": base_model({
+        "type": "star_transformer",
+        "hidden_size": embedding_dim, 
+        "num_layers": 3, 
+        "num_head": 3, 
+        "head_dim": embedding_dim,
+        "dropout": 0.4
+    }),
+    */
     
     // "iterator": common.iterators.bucket_iterator(batch_size=8, sorting_keys=[['anchor', 'num_token_characters']], skip_smaller_batches=true),
     "iterator": common.iterators.base_iterator(batch_size=32),
-    "trainer": common.trainer('adam', lr=0.001, num_epochs=8, cuda_device=[0, 1, 2, 3],) //5)
+    "trainer": common.trainer('adam', lr=0.001, num_epochs=8, cuda_device=[0, 1, 2, 3],) //patience=5
 }

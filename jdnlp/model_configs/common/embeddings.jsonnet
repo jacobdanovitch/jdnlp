@@ -1,5 +1,7 @@
 local seq2vec = import 'seq2vec.jsonnet';
 
+// https://nlp.h-its.org/bpemb/#download
+// https://fasttext.cc/docs/en/english-vectors.html
 local PRETRAINED = {
     "glove": {
         "100": "https://allennlp.s3.amazonaws.com/datasets/glove/glove.6B.100d.txt.gz",

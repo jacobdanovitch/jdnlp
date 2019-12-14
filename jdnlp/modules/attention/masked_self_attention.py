@@ -20,7 +20,7 @@ class MaskedSelfAttention(Seq2VecEncoder):
         self.encoder = TimeDistributed(encoder) if time_distributed else encoder
         self.attn_projection = nn.Linear(encoder.get_input_dim(), 1)
         
-    def forward(self, x: torch.Tensor, mask: torch.Tensor):
+    def forward(self, x: torch.Tensor, mask: torch.Tensor = None):
         encoded = self.encoder(x, mask)
         attn_logits = self.attn_projection(encoded).squeeze(-1)
         attn_weights = util.masked_softmax(attn_logits, mask)

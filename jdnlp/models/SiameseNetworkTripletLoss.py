@@ -68,7 +68,7 @@ class SiameseNetworkTripletLoss(Model):
                 # "f1": F1Measure(positive_label=1)
         }
         
-        self.miner = miners.MultiSimilarityMiner(epsilon=0.1)
+        # self.miner = miners.MultiSimilarityMiner(epsilon=0.1)
         
         # """
         self.loss = losses.TripletMarginLoss(
@@ -144,8 +144,8 @@ class SiameseNetworkTripletLoss(Model):
             embeddings = torch.cat([v_a, v_p], dim=0)
             labels = torch.cat([label, label], dim=0)
              
-            hard_pairs = self.miner(embeddings, labels)
-            loss = self.loss(embeddings, labels, hard_pairs) # * 1000
+            # hard_pairs = self.miner(embeddings, labels)
+            loss = self.loss(embeddings, labels) # , hard_pairs) # * 1000
             loss = loss or (embeddings * 0).sum()
             output_dict['loss'] = loss
         
