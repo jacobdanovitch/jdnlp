@@ -127,7 +127,10 @@ class SiameseNetworkTripletLoss(Model):
         loss : torch.FloatTensor, optional
             A scalar loss to be optimised.
         """
-        # self.rnn.flatten_parameters()
+        if hasattr(self.encoder, '_module') and hasattr(self.encoder._module, 'flatten_parameters'):
+            # could use torch.cuda.device_count() instead
+            self.encoder._module.flatten_parameters()
+            self.right_encoder._module.flatten_parameters()
 
         anchor_embedded, anchor_masks = self.embed_and_mask_tokens(anchor)
         v_a = self.encoder(anchor_embedded, *anchor_masks)

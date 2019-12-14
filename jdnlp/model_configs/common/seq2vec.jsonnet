@@ -1,3 +1,8 @@
+local pooling(encoder) = {
+    "type": "pooling",
+    "encoder": encoder,
+};
+
 local cnn(dim, filters=[1,2,3,4], output_dim=null) = {
     "type": "cnn",
     "embedding_dim": dim,
@@ -47,15 +52,29 @@ local bert_pooler(pretrained_model="bert-base-uncased", requires_grad=true) = {
     "requires_grad": requires_grad
 };
 
+local star_transformer(dim, num_layers=1, num_head=1, dropout=0.1) = {
+    "type": "star_transformer",
+    "hidden_size": dim, 
+    "num_layers": num_layers, 
+    "num_head": num_head, 
+    "head_dim": dim,
+    "dropout": dropout
+};
+
 {
+    pooling::pooling,
+    boe::boe,
     cnn:: cnn,
+    
     rnn:: rnn,
     gru:: (function(dim) rnn(dim, encoder='gru')),
     bigru:: (function(dim) birnn(dim, encoder='gru')),
     lstm:: (function(dim) rnn(dim, encoder='lstm')),
     bilstm:: (function(dim) birnn(dim, encoder='lstm')),
-    boe::boe,
+
     masked_self_attention:: masked_self_attn,
     multi_head_self_attention:: multi_head_self_attention,
-    bert_pooler::bert_pooler
+    bert_pooler::bert_pooler,
+    
+    star_transformer::star_transformer
 }

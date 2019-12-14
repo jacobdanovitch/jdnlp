@@ -13,8 +13,8 @@
 #fi
 
 export MODEL_PATH="experiments/$1.jsonnet"
+allennlp train "$MODEL_PATH" -f --include-package jdnlp # -s "saved/$1"
 
 # echo "python -m allennlp.run train \"jdnlp/model_configs/$1.json\" -f -s \"saved/$2/$1\" --overrides $P_CFG --include-package jdnlp"
 # tensorboard --logdir saved/counterspeech/attention/remembert/log --bind_all
-allennlp train "$MODEL_PATH" -f -s "saved/$1" --include-package jdnlp
 # --overrides "$CFG"
