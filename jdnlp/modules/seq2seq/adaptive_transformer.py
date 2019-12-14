@@ -274,7 +274,7 @@ class TransformerSeq(Seq2SeqEncoder):
 
     def init_h_cache(self, B):
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        logger.warn(f'Initializing hidden cache on device: {device}')
+        # logger.warn(f'Initializing hidden cache on device: {device}')
         self.h_cache = [torch.zeros(B, layer.attn.attn.get_cache_size(), self.hidden_size).to(device) for layer in self.layers]
     
     # @torchsnooper.snoop(watch='h_cache_next_l')

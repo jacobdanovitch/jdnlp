@@ -10,7 +10,7 @@ local embedding_dim = 300; // 100
 local base_model(enc) = {
     "type": "siamese_triplet_loss",
     // "text_field_embedder": embeddings.char_embedder(embedding_dim, tokens=false),
-    "text_field_embedder": embeddings.basic_embedder(embedding_dim, pretrained='glove'),
+    "text_field_embedder": embeddings.basic_embedder(embedding_dim),//, pretrained='glove'),
     //"text_field_embedder": embeddings.elmo_embedder(dim=embedding_dim, requires_grad=true),
     "encoder": enc,
     "loss_margin": 0.15
@@ -64,7 +64,8 @@ local adaptive_transformer = pooling_model({
 
 local pretrained_adaptive_transformer = {
     "type": "siamese_triplet_loss",
-    "text_field_embedder": embeddings.char_embedder(512, tokens=false),
+    // "text_field_embedder": embeddings.char_embedder(512, tokens=false),
+    "text_field_embedder": embeddings.basic_embedder(512),
     "encoder": {
         "type": "pooling",
         "encoder": {
@@ -127,18 +128,18 @@ local boe = {
             */
         },
         // */
-        "sample": 5000,
+        "sample": 2000,
     },
     "train_data_path": "datasets/tweet-linking/tweetlinking.jsonl",
     //"train_data_path": "datasets/reddit-linking/titleonly_100k.jsonl",
     
-    // "model": sparse_transformer,
-    "model": base_model(seq2vec.bigru(embedding_dim)), //
+    "model": sparse_transformer,
+    // "model": base_model(seq2vec.bigru(embedding_dim)), //
     // "model": base_model(seq2vec.cnn(embedding_dim)),
     // "model": adaptive_transformer,
     // "model": pretrained_adaptive_transformer,
     
     // "iterator": common.iterators.bucket_iterator(batch_size=8, sorting_keys=[['anchor', 'num_token_characters']], skip_smaller_batches=true),
     "iterator": common.iterators.base_iterator(batch_size=32),
-    "trainer": common.trainer('adam', lr=0.001, num_epochs=3) //5)
+    "trainer": common.trainer('adam', lr=0.001, num_epochs=8, cuda_device=[0, 1, 2, 3],) //5)
 }

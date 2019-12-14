@@ -127,6 +127,7 @@ class SiameseNetworkTripletLoss(Model):
         loss : torch.FloatTensor, optional
             A scalar loss to be optimised.
         """
+        # self.rnn.flatten_parameters()
 
         anchor_embedded, anchor_masks = self.embed_and_mask_tokens(anchor)
         v_a = self.encoder(anchor_embedded, *anchor_masks)

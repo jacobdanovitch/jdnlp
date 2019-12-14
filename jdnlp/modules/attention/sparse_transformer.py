@@ -49,8 +49,8 @@ class SelfAttentionNarrow(nn.Module):
         values  = self.tovalues(x).view(b, t, h, e)
 
         dot = torch.einsum('bthe,bihe->bhti', queries, keys) / math.sqrt(e)
-        dot = sparsemax(dot, dim=-1)
-        # dot = F.softmax(dot, dim=-1)
+        # dot = sparsemax(dot, dim=-1)
+        dot = F.softmax(dot, dim=-1)
 
         out = torch.einsum('bhtd,bdhe->bthe', dot, values)
 
@@ -94,8 +94,8 @@ class SelfAttentionNarrow(nn.Module):
         if self.mask: # mask out the upper half of the dot matrix, excluding the diagonal
             mask_(dot, maskval=float('-inf'), mask_diagonal=False)
 
-        # dot = F.softmax(dot, dim=-1)
-        dot = sparsemax(dot, dim=-1)
+        dot = F.softmax(dot, dim=-1)
+        # dot = sparsemax(dot, dim=-1)
         # - dot now has row-wise self-attention probabilities
 
         # apply the self attention to the values
