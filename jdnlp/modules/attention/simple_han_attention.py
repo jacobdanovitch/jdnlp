@@ -4,14 +4,18 @@ https://github.com/serrano-s/attn-tests/blob/master/attn_tests_lib/simple_han_at
 """
 
 from overrides import overrides
+from typing import Dict, Optional, Callable
+
 from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, TimeDistributed
 from allennlp.nn.util import get_text_field_mask, masked_softmax
 from allennlp.nn import util
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 import os
 import numpy as np
 
-from entmax import sparsemax
+from entmax import sparsemax, entmax_bisect
 
 import torchsnooper
 import logging
@@ -21,15 +25,65 @@ logger = logging.getLogger(__name__)
 NOTE: Softmax -> Sparsemax
 """
 
+def masked_activation(
+    fn: Callable,
+    vector: torch.Tensor,
+    mask: torch.Tensor,
+    dim: int = -1,
+    memory_efficient: bool = False,
+    mask_fill_value: float = -1e32,
+) -> torch.Tensor:
+    """
+    ``torch.nn.functional.softmax(vector)`` does not work if some elements of ``vector`` should be
+    masked.  This performs a softmax on just the non-masked portions of ``vector``.  Passing
+    ``None`` in for the mask is also acceptable; you'll just get a regular softmax.
+    ``vector`` can have an arbitrary number of dimensions; the only requirement is that ``mask`` is
+    broadcastable to ``vector's`` shape.  If ``mask`` has fewer dimensions than ``vector``, we will
+    unsqueeze on dimension 1 until they match.  If you need a different unsqueezing of your mask,
+    do it yourself before passing the mask into this function.
+    If ``memory_efficient`` is set to true, we will simply use a very large negative number for those
+    masked positions so that the probabilities of those positions would be approximately 0.
+    This is not accurate in math, but works for most cases and consumes less memory.
+    In the case that the input vector is completely masked and ``memory_efficient`` is false, this function
+    returns an array of ``0.0``. This behavior may cause ``NaN`` if this is used as the last layer of
+    a model that uses categorical cross-entropy loss. Instead, if ``memory_efficient`` is true, this function
+    will treat every element as equal, and do softmax over equal numbers.
+    """
+    if mask is None:
+        result = fn(vector, dim=dim)
+    else:
+        mask = mask.float()
+        while mask.dim() < vector.dim():
+            mask = mask.unsqueeze(1)
+        if not memory_efficient:
+            # To limit numerical errors from large vector elements outside the mask, we zero these out.
+            result = fn(vector * mask, dim=dim)
+            result = result * mask
+            result = result / (result.sum(dim=dim, keepdim=True) + 1e-13)
+        else:
+            masked_vector = vector.masked_fill((1 - mask).to(dtype=torch.bool), mask_fill_value)
+            result = fn(masked_vector, dim=dim)
+    return result
+
 @Seq2SeqEncoder.register("simple_han_attention")
 class SimpleHanAttention(Seq2SeqEncoder):
     def __init__(self,
                  input_dim : int = None,
                  context_vector_dim: int = None) -> None:
         super().__init__()
+        context_vector_dim = context_vector_dim or input_dim
+        
+        #self.alpha = torch.nn.Parameter(torch.randn(1))
+        
         self._mlp = torch.nn.Linear(input_dim, context_vector_dim, bias=True)
         self._context_dot_product = torch.nn.Linear(context_vector_dim, 1, bias=False)
         self.vec_dim = self._mlp.weight.size(1)
+        
+        self._encoder = Seq2SeqEncoder.by_name('gru')(
+            input_size=input_dim,
+            hidden_size=input_dim//2,
+            bidirectional=True
+        )
 
     @overrides
     def get_input_dim(self) -> int:
@@ -43,20 +97,56 @@ class SimpleHanAttention(Seq2SeqEncoder):
     def is_bidirectional(self):
         return False
 
-    @overrides
+    # @torchsnooper.snoop() # @overrides
     def forward(self, tokens: torch.Tensor, mask: torch.Tensor):  # pylint: disable=arguments-differ
         assert mask is not None
         batch_size, sequence_length, embedding_dim = tokens.size()
+        
+        tokens = self._encoder(tokens, mask)
 
         attn_weights = tokens.view(batch_size * sequence_length, embedding_dim)
         attn_weights = torch.tanh(self._mlp(attn_weights))
         attn_weights = self._context_dot_product(attn_weights)
         attn_weights = attn_weights.view(batch_size, -1)  # batch_size x seq_len
-        attn_weights = sparsemax(attn_weights, dim=-1) # 
-        # attn_weights = util.masked_softmax(attn_weights, mask)
+        
+        attn_weights = F.softmax(attn_weights, dim=-1)
+        # attn_weights = entmax_bisect(attn_weights, alpha=self.alpha, dim=-1)
+        # attn_weights = sparsemax(attn_weights, dim=-1) # 
+        # attn_weights = masked_activation(lambda x, dim: (entmax_bisect(x, alpha=self.alpha, dim=dim)), attn_weights, mask)
+        
         attn_weights = attn_weights.unsqueeze(2).expand(batch_size, sequence_length, embedding_dim)
 
         return tokens * attn_weights
+    
+@Seq2SeqEncoder.register("stacked_han_attention")
+class MultiHeadDotAttention(Seq2SeqEncoder):
+    def __init__(self,
+                 input_dim : int = None,
+                 context_vector_dim: int = None,
+                 n_heads: int = 1
+                 ) -> None:
+        super().__init__()
+        
+        self.attn_heads = nn.ModuleList([SimpleHanAttention(input_dim, context_vector_dim) for _ in range(n_heads)])
+        self.proj = nn.Linear(input_dim * n_heads, input_dim)
+
+    @overrides
+    def get_input_dim(self) -> int:
+        return self.attn_heads[0].get_input_dim()
+
+    @overrides
+    def get_output_dim(self) -> int:
+        return self.attn_heads[0].get_output_dim()
+
+    @overrides
+    def is_bidirectional(self):
+        return False
+
+    # @torchsnooper.snoop() # @overrides
+    def forward(self, tokens: torch.Tensor, mask: torch.Tensor):
+        x = torch.cat([head(tokens, mask) for head in self.attn_heads], dim=-1)
+        x = self.proj(x)
+        return x
     
 
 @Seq2VecEncoder.register("han_encoder")
