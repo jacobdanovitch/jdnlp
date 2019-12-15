@@ -5,4 +5,5 @@ neptune-client
 torchsnooper
 convokit
 entmax
-pytorch_metric_learning
+git+git://github.com/jacobdanovitch/pytorch_metric_learning.git 
+# pytorch_metric_learning # temp removed for py3.6.9 compatibility on colab (comp5900x demo)
