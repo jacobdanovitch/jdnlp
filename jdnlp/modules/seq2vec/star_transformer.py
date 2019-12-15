@@ -9,7 +9,7 @@ from torch import nn
 import torch.nn.functional as F
 
 import numpy as NP
-from entmax import sparsemax
+from entmax import sparsemax, entmax_bisect
 
 from typing import Dict, Optional
 from overrides import overrides
@@ -18,16 +18,29 @@ from allennlp.modules import Seq2VecEncoder, Seq2SeqEncoder, TimeDistributed
 import logging
 logger = logging.getLogger(__name__)
 
+# https://discuss.pytorch.org/t/how-to-make-the-parameter-of-torch-nn-threshold-learnable/4729/24
+def ClampMax(x, val):
+    """
+    Clamps x to val.
+    val >= 0.0
+    """
+    return x.clamp(min=0.0).sub(val).clamp(max=0.0).add(val) + x.clamp(max=0.0)
+
 @Seq2VecEncoder.register("star_transformer")
 class StarTransformerPooling(Seq2VecEncoder):
     def __init__(self, hidden_size, num_layers, num_head, head_dim, dropout=0.1, max_len=None):
         super().__init__()
         self.star_transformer = StarTransformer(hidden_size, num_layers, num_head, head_dim, dropout, max_len)
+        
+        self.relay_w = nn.Parameter(torch.randn(1))
+        self.nodes_w = nn.Parameter(torch.randn(1))
     
     @overrides    
     def forward(self, x: torch.Tensor, mask: torch.Tensor=None, *args, **kwargs): 
         nodes, relay = self.star_transformer(x, mask)
-        return 0.5 * (relay + nodes.max(1)[0])
+        nodes = nodes.max(1)[0]
+        # return 0.5 * (relay + nodes)
+        return 0.5 * ((self.relay_w * relay) + (self.nodes_w * nodes))
     
     @overrides
     def get_input_dim(self) -> int:
@@ -119,6 +132,9 @@ class MultiHeadedRingAttention(nn.Module):
         self.drop = nn.Dropout(dropout)
         self.nhid, self.nhead, self.head_dim, self.unfold_size = nhid, nhead, head_dim, 3
 
+        self.alpha = nn.Parameter(torch.FloatTensor([1.5]))
+        self.softmax = entmax_bisect # sparsemax F.softmax
+
     def forward(self, x, ax=None):
         # x: B, H, L, 1, ax : B, H, X, L append features
         nhid, nhead, head_dim, unfold_size = self.nhid, self.nhead, self.head_dim, self.unfold_size
@@ -139,7 +155,10 @@ class MultiHeadedRingAttention(nn.Module):
             k = torch.cat([k, ak], 3)
             v = torch.cat([v, av], 3)
 
-        alphas = self.drop(F.softmax((q * k).sum(2, keepdim=True) / NP.sqrt(head_dim), 3))  # B N L 1 U
+        scale = NP.sqrt(head_dim)
+        alphas = (q * k).sum(2, keepdim=True) / scale
+        alphas = self.softmax(alphas, alpha=ClampMax(self.alpha, 10), dim=3)
+        alphas = self.drop(alphas)  # B N L 1 U
         att = (alphas * v).sum(3).view(B, nhead * head_dim, L, 1)
 
         ret = self.WO(att)
@@ -158,6 +177,9 @@ class MultiHeadedStarAttention(nn.Module):
         self.drop = nn.Dropout(dropout)
         self.nhid, self.nhead, self.head_dim, self.unfold_size = nhid, nhead, head_dim, 3
 
+        self.alpha = nn.Parameter(torch.FloatTensor([1.5]))
+        self.softmax = entmax_bisect # sparsemax F.softmax
+
     def forward(self, x, y, mask=None):
         # x: B, H, 1, 1, 1 y: B H L 1
         nhid, nhead, head_dim, unfold_size = self.nhid, self.nhead, self.head_dim, self.unfold_size
@@ -168,9 +190,11 @@ class MultiHeadedStarAttention(nn.Module):
         q = q.view(B, nhead, 1, head_dim)  # B, H, 1, 1 -> B, N, 1, h
         k = k.view(B, nhead, head_dim, L)  # B, H, L, 1 -> B, N, h, L
         v = v.view(B, nhead, head_dim, L).permute(0, 1, 3, 2)  # B, H, L, 1 -> B, N, L, h
-        pre_a = torch.matmul(q, k) / NP.sqrt(head_dim)
+        
+        scale = NP.sqrt(head_dim)
+        pre_a = torch.matmul(q, k) / scale
         if mask is not None:
             pre_a = pre_a.masked_fill(mask[:, None, None, :], -float('inf'))
-        alphas = self.drop(F.softmax(pre_a, 3))  # B, N, 1, L
+        alphas = self.drop(self.softmax(pre_a, alpha=ClampMax(self.alpha,10), dim=3))  # B, N, 1, L
         att = torch.matmul(alphas, v).view(B, -1, 1, 1)  # B, N, 1, h -> B, N*h, 1, 1
         return self.WO(att)

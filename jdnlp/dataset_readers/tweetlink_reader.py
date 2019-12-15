@@ -69,7 +69,7 @@ class TweetLinkReader(DatasetReader):
         article_mask = df.article.str.match('\w+')
         text_mask = df.text.str.match('\w+')
         
-        df = df[article_mask & text_mask]
+        df = df[article_mask & text_mask].dropna()
         
         if self.sample:
             # df = df.sample(self.sample)
@@ -92,7 +92,7 @@ class TweetLinkReader(DatasetReader):
 
     def to_textfield(self, text):
         def _to_textfield(txt):
-            tokens = self._tokenizer.tokenize(txt)
+            tokens = self._tokenizer.tokenize(txt)[-1000:]
             return TextField(tokens, self._token_indexers)
         if self.segment_sentences:
             sents = self.sent_split(text)

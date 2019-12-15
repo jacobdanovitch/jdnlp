@@ -41,7 +41,7 @@ local dcn(dim, k_max_number=100) = {
 
 local biblosa(dim, expected_max_length=100) = {
     "type": "block-self-attention",
-    "input_dim": embedding_dim,
+    "input_dim": dim,
     "expected_max_length": expected_max_length
 };
 

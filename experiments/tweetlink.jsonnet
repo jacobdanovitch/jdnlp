@@ -8,8 +8,8 @@ local embedding_dim = 300; // 100
 local base_model(enc) = {
     "type": "siamese_triplet_loss",
     //"text_field_embedder": embeddings.char_embedder(embedding_dim, tokens=false),
-    //"text_field_embedder": embeddings.basic_embedder(embedding_dim, pretrained='glove'),
-    "text_field_embedder": embeddings.basic_embedder(embedding_dim),
+    "text_field_embedder": embeddings.basic_embedder(embedding_dim, pretrained='glove'),
+    // "text_field_embedder": embeddings.basic_embedder(embedding_dim),
     "encoder": enc,
     "loss_margin": 0.15
 };
@@ -22,7 +22,7 @@ local datasets = {
 };
 
 local models = {
-    biblosa: base_model(seq2seq.biblosa(embedding_dim)),
+    biblosa: pooling_model(seq2seq.biblosa(embedding_dim)),
     sparse_transformer: pooling_model(seq2seq.sparse_transformer(embedding_dim)),
     adaptive_transformer: pooling_model(seq2seq.adaptive_transformer(embedding_dim)),
     pretrained_adaptive_transformer: {
@@ -36,7 +36,7 @@ local models = {
     },
 
     attn: pooling_model(seq2seq.learned_attn(embedding_dim)),
-    star_transformer: base_model(seq2vec.star_transformer(embedding_dim)), // 1L, 1H, DO=0.1 worked ok
+    star_transformer: base_model(seq2vec.star_transformer(embedding_dim, dropout=0.05)), // 1L, 1H, DO=0.1 worked ok
     
     gru: base_model(seq2vec.gru(embedding_dim)),
     bigru: base_model(seq2vec.bigru(embedding_dim)),
@@ -55,13 +55,14 @@ local model = std.extVar('model');
                 "lowercase_tokens": true
                 }
         },
-        "sample": 200, //20000,
+        //"max_sequence_length": 1000
+        // "sample": 5000, //20000,
     },
 
     "train_data_path": datasets[dataset],
     "model": models[model],
     
     // "iterator": common.iterators.bucket_iterator(batch_size=8, sorting_keys=[['anchor', 'num_token_characters']], skip_smaller_batches=true),
-    "iterator": common.iterators.base_iterator(batch_size=64),
-    "trainer": common.trainer('adam', lr=0.0005, num_epochs=1, cuda_device=[0, 1, 2, 3], patience=5)
+    "iterator": common.iterators.base_iterator(batch_size=16),
+    "trainer": common.trainer('adam', lr=0.0001, num_epochs=10, cuda_device=[0, 1, 2, 3], patience=5)
 }

@@ -11,7 +11,8 @@ import torchsnooper
 import logging
 logger = logging.getLogger(__name__)
 
-softmax_fn = sparsemax # F.softmax
+# softmax_fn = sparsemax # 
+softmax_fn = F.softmax
 
 def calculate_block_size(expected_max_len):
     return int((2 * expected_max_len) ** (1/3))

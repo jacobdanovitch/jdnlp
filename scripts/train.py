@@ -55,7 +55,7 @@ if __name__ == '__main__':
         "jdnlp"
     ]
 
-    logger.warn(' '.join(sys.argv))
+    logger.warning(' '.join(sys.argv))
     proc = subprocess.run(sys.argv,
         stdin = sys.stdin, #subprocess.PIPE,
         stdout=sys.stdout, #subprocess.PIPE,
