@@ -18,6 +18,7 @@ def get_args():
     # https://www.mattzeunert.com/2012/02/12/unnamed-arguments-with-argparse.html
     parser = argparse.ArgumentParser()
     parser.add_argument('exp', nargs=1, type=str)
+    parser.add_argument('-s', '--suffix', required=False, type=str)
 
     # https://stackoverflow.com/questions/37367331/is-it-possible-to-use-argparse-to-capture-an-arbitrary-set-of-optional-arguments
     parsed, unknown = parser.parse_known_args()
@@ -44,13 +45,14 @@ if __name__ == '__main__':
             config_vars.append((arg, val))
 
     config_vars = '_'.join(sorted((val for (_, val) in config_vars), key=lambda x: x[0]))
+    folder_name = config_vars + (f'_{args.suffix}' if args.suffix else '')
     sys.argv = [
         "allennlp",
         "train",
         f"experiments/{args.exp}.jsonnet",
         "-f",
         "-s",
-        f"saved/{args.exp}/{config_vars}",
+        f"saved/{args.exp}/{folder_name}",
         "--include-package",
         "jdnlp"
     ]

@@ -2,11 +2,25 @@ local seq2vec = import 'seq2vec.jsonnet';
 
 // https://nlp.h-its.org/bpemb/#download
 // https://fasttext.cc/docs/en/english-vectors.html
+// https://github.com/3Top/word2vec-api
 local PRETRAINED = {
     "glove": {
+        "50": "https://allennlp.s3.amazonaws.com/datasets/glove/glove.6B.50d.txt.gz",
         "100": "https://allennlp.s3.amazonaws.com/datasets/glove/glove.6B.100d.txt.gz",
         "300": "https://allennlp.s3.amazonaws.com/datasets/glove/glove.840B.300d.txt.gz",
-    }
+    },
+    "word2vec": {
+        "300": "https://allennlp.s3.amazonaws.com/datasets/word2vec/GoogleNews-vectors-negative300.txt.gz"
+    },
+    "wiki-news": {
+        "300": "https://dl.fbaipublicfiles.com/fasttext/vectors-english/wiki-news-300d-1M.vec.zip"
+    },
+    "crawl": {
+        "300": "https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M.vec.zip"
+    },
+    "fasttext": {
+        "300": "https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.en.300.bin.gz"
+    },
 };
 
 local BASIC_EMBEDDER(dim, trainable=true, pretrained=null) = {

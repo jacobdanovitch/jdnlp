@@ -52,12 +52,13 @@ local bert_pooler(pretrained_model="bert-base-uncased", requires_grad=true) = {
     "requires_grad": requires_grad
 };
 
-local star_transformer(dim, num_layers=1, num_head=1, dropout=0.1) = {
+local star_transformer(dim, num_layers=1, num_head=3, unfold_size=3, dropout=0.1) = {
     "type": "star_transformer",
     "hidden_size": dim, 
     "num_layers": num_layers, 
     "num_head": num_head, 
-    "head_dim": dim,
+    "head_dim": dim/num_head,
+    "unfold_size": unfold_size,
     "dropout": dropout
 };
 

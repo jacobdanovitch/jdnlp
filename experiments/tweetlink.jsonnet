@@ -7,11 +7,10 @@ local seq2seq = import '../jdnlp/model_configs/common/seq2seq.jsonnet';
 local embedding_dim = 300; // 100
 local base_model(enc) = {
     "type": "siamese_triplet_loss",
-    //"text_field_embedder": embeddings.char_embedder(embedding_dim, tokens=false),
     "text_field_embedder": embeddings.basic_embedder(embedding_dim, pretrained='glove'),
-    // "text_field_embedder": embeddings.basic_embedder(embedding_dim),
+    //"text_field_embedder": embeddings.basic_embedder(embedding_dim),
     "encoder": enc,
-    "loss_margin": 0.15
+    "loss_margin": 0.075
 };
 local pooling_model(enc) = base_model(seq2vec.pooling(enc));
 
@@ -36,7 +35,7 @@ local models = {
     },
 
     attn: pooling_model(seq2seq.learned_attn(embedding_dim)),
-    star_transformer: base_model(seq2vec.star_transformer(embedding_dim, dropout=0.05)), // 1L, 1H, DO=0.1 worked ok
+    star_transformer: base_model(seq2vec.star_transformer(embedding_dim, dropout=0.0, num_layers=1, num_head=10, unfold_size=5)), // 1L, 1H, DO=0.1 worked ok
     
     gru: base_model(seq2vec.gru(embedding_dim)),
     bigru: base_model(seq2vec.bigru(embedding_dim)),
@@ -63,6 +62,6 @@ local model = std.extVar('model');
     "model": models[model],
     
     // "iterator": common.iterators.bucket_iterator(batch_size=8, sorting_keys=[['anchor', 'num_token_characters']], skip_smaller_batches=true),
-    "iterator": common.iterators.base_iterator(batch_size=16),
-    "trainer": common.trainer('adam', lr=0.0001, num_epochs=10, cuda_device=[0, 1, 2, 3], patience=5)
+    "iterator": common.iterators.base_iterator(batch_size=128),
+    "trainer": common.trainer('adam', lr=0.001, num_epochs=10, cuda_device=[0, 1, 2, 3], patience=5)
 }
